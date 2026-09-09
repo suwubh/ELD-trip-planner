@@ -37,7 +37,7 @@ def test_trip_plan_rejects_invalid_cycle_hours(api_client: APIClient) -> None:
     ]
 
 
-def test_trip_plan_validates_before_not_implemented_response(api_client: APIClient) -> None:
+def test_trip_plan_returns_safe_routing_error_after_valid_input(api_client: APIClient) -> None:
     response = api_client.post(
         "/api/v1/trips/plan",
         {
@@ -50,8 +50,8 @@ def test_trip_plan_validates_before_not_implemented_response(api_client: APIClie
         format="json",
     )
 
-    assert response.status_code == 501
-    assert response.json()["error"]["code"] == "not_implemented"
+    assert response.status_code == 502
+    assert response.json()["error"]["code"] == "routing_unavailable"
 
 
 def test_location_suggestions_are_returned_from_here_client(api_client: APIClient, monkeypatch) -> None:
