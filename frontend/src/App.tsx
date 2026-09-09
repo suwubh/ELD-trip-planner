@@ -1,5 +1,6 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import { ApiError, getLocationSuggestions, planTrip, type LocationSuggestion, type TripPlanResponse } from './api'
+import { PlanResults } from './PlanResults'
 import './App.css'
 
 type LocationFieldName = 'currentLocation' | 'pickupLocation' | 'dropoffLocation'
@@ -63,6 +64,7 @@ function App() {
       </form>
       <aside className="preview-card" aria-live="polite">{plan ? <PlanPreview plan={plan} /> : <EmptyPreview />}</aside>
     </section>
+    {plan && <PlanResults plan={plan} />}
   </main>
 }
 
