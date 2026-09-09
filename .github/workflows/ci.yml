@@ -37,5 +37,7 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+      - name: Remove unused Google Chrome apt source
+        run: sudo rm -f /etc/apt/sources.list.d/google-chrome.list /etc/apt/sources.list.d/google-chrome.sources
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
