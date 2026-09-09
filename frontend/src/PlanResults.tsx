@@ -1,4 +1,5 @@
 import type { PlanEvent, TripPlanResponse } from './api'
+import { DailyLogs } from './DailyLogs'
 import { RouteMap } from './RouteMap'
 import './PlanResults.css'
 
@@ -59,5 +60,6 @@ export function PlanResults({ plan }: PlanResultsProps) {
     </div>
 
     <section className="itinerary-card" aria-labelledby="itinerary-title"><div className="panel-heading"><div><p className="section-kicker">Timeline</p><h3 id="itinerary-title">Driver itinerary</h3></div><span>{itinerary.length} events</span></div><ol className="itinerary">{itinerary.map((event, index) => <li key={event.id ?? `${event.start}-${index}`} className={event.required ? 'is-required' : ''}><time dateTime={event.start}>{formatTime(event.start)}</time><span className={`timeline-dot ${event.dutyStatus}`} aria-hidden="true" /><div><div className="event-title"><strong>{eventName(event)}</strong>{event.required && <em>Required</em>}</div><p>{event.reason}</p>{event.location && <small>{event.location.label}</small>}</div><span className="event-duration">{formatDuration(event.durationMinutes)} · {statusNames[event.dutyStatus]}</span></li>)}</ol></section>
+    {plan.dailyLogs?.length ? <DailyLogs logs={plan.dailyLogs} locations={trip.locations} /> : null}
   </section>
 }

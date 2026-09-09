@@ -3,12 +3,14 @@ export type PlannedLocation = { label: string; address: string | null; position:
 export type LocationSuggestion = { id: string; label: string; address: string | null; position: Position }
 export type PlanEvent = { id?: string; kind: string; dutyStatus: 'off_duty' | 'sleeper_berth' | 'driving' | 'on_duty_not_driving'; start: string; end: string; durationMinutes: number; required: boolean; reason: string; location: PlannedLocation | null }
 export type RouteResponse = { distanceMiles: number; durationMinutes: number; geometry: Array<[number, number]> }
+export type DailyLog = { date: string; events: PlanEvent[]; totalsMinutes: Record<PlanEvent['dutyStatus'], number>; remarks: string[] }
 export type TripPlanResponse = {
   trip?: { startTime: string; locations: { current: PlannedLocation; pickup: PlannedLocation; dropoff: PlannedLocation } }
   route: RouteResponse
   compliance: { isCompliant: boolean; drivingHoursRemaining?: number; dailyWindowHoursRemaining?: number; cycleHoursRemaining: number; summary: string; nextRequiredStop?: PlanEvent | null }
   events: PlanEvent[]
   itinerary?: PlanEvent[]
+  dailyLogs?: DailyLog[]
 }
 type ApiErrorBody = { error?: { message?: string; fields?: Record<string, string[]> } }
 
