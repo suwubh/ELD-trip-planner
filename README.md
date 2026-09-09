@@ -47,7 +47,23 @@ Copy `.env.example` to a local `.env` file and fill the placeholder values. Do n
 
 ## Local development
 
-Backend and frontend setup commands will be added when their projects are scaffolded. The intended development URLs are Django at `http://localhost:8000` and Vite at `http://localhost:5173`.
+The backend foundation is ready. From the repository root in PowerShell:
+
+```powershell
+& 'C:\Path\To\Python312\python.exe' -m venv .venv
+& .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+Set-Location backend
+& ..\.venv\Scripts\python.exe manage.py runserver
+```
+
+Run backend checks and tests from `backend/`:
+
+```powershell
+& ..\.venv\Scripts\python.exe manage.py check
+& ..\.venv\Scripts\python.exe -m pytest
+```
+
+The health endpoint is available at `http://localhost:8000/api/v1/health/`. The intended frontend development URL is `http://localhost:5173`.
 
 If this folder has not yet been linked to GitHub, initialize it or clone the existing remote before the first commit:
 

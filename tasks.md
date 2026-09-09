@@ -31,15 +31,15 @@
 
 ## Checkpoint 2 — Django API foundation
 
-- [ ] Create Django project configuration and a dedicated API/trips application under `backend/`.
-- [ ] Configure Django REST Framework, JSON-only API behaviour, CORS for the frontend origin, environment-based settings, and development defaults that never expose secrets.
-- [ ] Add health/readiness endpoint or equivalent lightweight operational check for Render.
-- [ ] Define typed/domain-friendly request and response schemas for locations, route legs, stops, events, compliance, and daily logs.
-- [ ] Implement shared API error responses with stable field-level validation messages and safe provider-error messages.
-- [ ] Add pytest, pytest-django, test settings, fixtures, and commands for isolated test runs.
-- [ ] Document local backend setup and all backend environment variables in README/state/architecture files.
-- [ ] **Acceptance check:** `GET /api/...` routing works locally, CORS is configured from environment, and a representative validation error is tested.
-- [ ] **Commit checkpoint:** `feat: scaffold django api foundation`.
+- [x] Create Django project configuration and a dedicated API/trips application under `backend/`.
+- [x] Configure Django REST Framework, JSON-only API behaviour, CORS for the frontend origin, environment-based settings, and development defaults that never expose secrets.
+- [x] Add health/readiness endpoint or equivalent lightweight operational check for Render.
+- [x] Define typed/domain-friendly request and response schemas for locations, route legs, stops, events, compliance, and daily logs.
+- [x] Implement shared API error responses with stable field-level validation messages and safe provider-error messages.
+- [x] Add pytest, pytest-django, test settings, fixtures, and commands for isolated test runs.
+- [x] Document local backend setup and all backend environment variables in README/state/architecture files.
+- [x] **Acceptance check:** `GET /api/...` routing works locally, CORS is configured from environment, and a representative validation error is tested.
+- [x] **Commit checkpoint:** `feat: scaffold django api foundation`.
 
 ## Checkpoint 3 — HERE geocoding and truck routing integration
 

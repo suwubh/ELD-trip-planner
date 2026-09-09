@@ -17,5 +17,6 @@ Keep this file factual. Add an entry only after it is verified by an authoritati
 
 ## Workspace observations
 
-- On 2026-09-09, Node.js `v22.18.0` was available. The `python` command failed to launch and `py` was unavailable, so backend setup cannot yet be verified locally.
-- On 2026-09-09, this folder was not a local Git repository despite the GitHub remote having been created; initialize or clone it before the first checkpoint commit.
+- On 2026-09-09, Python `3.12.6` was available at `C:\Users\subha\AppData\Local\Programs\Python\Python312\python.exe`, while the `python` app alias remained unusable in this shell. Use the project virtual environment executable directly in documented commands.
+- On 2026-09-09, the local Git remote was configured as `https://github.com/suwubh/ELD-trip-planner.git`; checkpoint commits remain local until explicitly pushed.
+- Django `5.2.17` and the pytest suite run successfully in `.venv`. The API uses a custom REST Framework exception handler so field validation is returned in the documented `error` envelope.

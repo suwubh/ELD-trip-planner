@@ -2,9 +2,9 @@
 
 ## Current status
 
-- **Phase:** Checkpoint 1 complete; preparing Checkpoint 2 — Django API foundation.
-- **Completed:** `tasks.md`, `.gitignore`, `.env.example`, this state file, `lessons.md`, `docs/architecture.md`, and `README.md` have been created.
-- **Application code:** not started.
+- **Phase:** Checkpoint 2 complete — Django API foundation.
+- **Completed:** Project-context files, root hygiene files, Django/DRF project under `backend/`, environment-based settings, CORS, JSON-only REST configuration, health endpoint, validation envelope, typed API domain contracts, and pytest foundation tests.
+- **Application code:** API foundation only. HERE integration and HOS planning are not implemented.
 - **Repository state:** this workspace is not currently initialized as a local Git repository. The intended remote is `https://github.com/suwubh/ELD-trip-planner.git`.
 
 ## Active decisions
@@ -13,7 +13,7 @@
 - The required form inputs are current location, pickup location, dropoff location, and current cycle-used hours. The trip starts at the browser time when the user requests a plan.
 - The route sequence is current location → pickup → dropoff. The Django backend alone communicates with HERE.
 - The application is stateless: no authentication, database, or dispatch-management functionality.
-- Target runtimes are Python 3.12+ and Node.js 22 LTS. Node `v22.18.0` is available in this workspace; Python is not currently runnable from this shell and must be installed or repaired before backend work.
+- Target runtimes are Python 3.12+ and Node.js 22 LTS. This workspace uses Python `3.12.6`, Django `5.2.17`, Django REST Framework `3.16.1`, and Node `v22.18.0`.
 
 ## Environment-variable names
 
@@ -35,4 +35,4 @@
 
 ## Next action
 
-Create the Django API foundation under `backend/` after Python is available locally.
+Implement the backend-only HERE client and location-suggestion endpoint (Checkpoint 3).
