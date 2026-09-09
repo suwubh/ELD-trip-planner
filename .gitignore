@@ -34,8 +34,3 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
-
-#personal docs
-tasks.md
-state.md
-lessons.md
