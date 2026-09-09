@@ -20,13 +20,17 @@ describe('trip planner form', () => {
   })
   it('shows suggestions and applies the selected location', async () => {
     vi.useFakeTimers()
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ suggestions: [{ id: '1', label: 'Chicago, IL', address: 'Chicago, Illinois', position: { lat: 1, lng: 2 } }] }) }))
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ suggestions: [{ id: '1', label: 'Chicago, IL', address: 'Chicago, Illinois', position: { lat: 1, lng: 2 } }] }) })
+    vi.stubGlobal('fetch', fetchMock)
     render(<App />)
     fireEvent.change(screen.getByRole('textbox', { name: /current location/i }), { target: { value: 'Chi' } })
     await act(async () => { await vi.advanceTimersByTimeAsync(300) })
     expect(screen.getByRole('button', { name: /chicago, il/i })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /chicago, il/i }))
     expect(screen.getByRole('textbox', { name: /current location/i })).toHaveValue('Chicago, IL')
+    expect(screen.queryByRole('list', { name: /current location suggestions/i })).not.toBeInTheDocument()
+    await act(async () => { await vi.advanceTimersByTimeAsync(300) })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
     vi.useRealTimers()
   })
   it('submits a valid plan and presents its compliance summary', async () => {

@@ -70,12 +70,14 @@ function App() {
 
 function LocationField({ sequence, name, label, hint, value, error, onChange }: { sequence: number; name: LocationFieldName; label: string; hint: string; value: string; error?: string; onChange: (value: string) => void }) {
   const inputId = useId()
+  const suggestionsId = `${inputId}-suggestions`
   const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false)
   useEffect(() => {
     const query = value.trim()
-    if (query.length < 2) return
+    if (!isSuggestionsOpen || query.length < 2) return
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
       setIsLoading(true); setRequestError(null)
@@ -85,13 +87,23 @@ function LocationField({ sequence, name, label, hint, value, error, onChange }: 
       } finally { if (!controller.signal.aborted) setIsLoading(false) }
     }, 300)
     return () => { controller.abort(); window.clearTimeout(timer) }
-  }, [value])
-  return <div className="field-group location-field">
+  }, [value, isSuggestionsOpen])
+  function closeSuggestions() {
+    setIsSuggestionsOpen(false)
+    setSuggestions([])
+    setIsLoading(false)
+    setRequestError(null)
+  }
+  function selectSuggestion(suggestion: LocationSuggestion) {
+    closeSuggestions()
+    onChange(suggestion.label)
+  }
+  return <div className="field-group location-field" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) closeSuggestions() }}>
     <label htmlFor={inputId}><span className="field-sequence">{sequence}</span>{label} <span aria-hidden="true">*</span></label>
-    <input id={inputId} name={name} type="text" autoComplete="off" placeholder="City, state or address" value={value} onChange={(event) => { if (event.target.value.trim().length < 2) { setSuggestions([]); setRequestError(null) }; onChange(event.target.value) }} aria-describedby={`${inputId}-help`} aria-invalid={Boolean(error)} />
-    <p className="field-help" id={`${inputId}-help`}>{hint}</p>{error && <p className="field-error" role="alert">{error}</p>}{isLoading && <p className="suggestion-state">Finding locations…</p>}{requestError && <p className="field-error">{requestError}</p>}
-    {!isLoading && !requestError && value.trim().length >= 2 && suggestions.length === 0 && <p className="suggestion-state">No suggestions found.</p>}
-    {suggestions.length > 0 && <ul className="suggestions" aria-label={`${label} suggestions`}>{suggestions.map((suggestion) => <li key={suggestion.id}><button type="button" onClick={() => onChange(suggestion.label)}><span>{suggestion.label}</span>{suggestion.address && <small>{suggestion.address}</small>}</button></li>)}</ul>}
+    <input id={inputId} name={name} type="text" autoComplete="off" placeholder="City, state or address" value={value} onChange={(event) => { const nextValue = event.target.value; setIsSuggestionsOpen(true); setSuggestions([]); setRequestError(null); if (nextValue.trim().length < 2) setIsLoading(false); onChange(nextValue) }} onFocus={() => { if (value.trim().length >= 2) setIsSuggestionsOpen(true) }} aria-autocomplete="list" aria-controls={suggestionsId} aria-expanded={isSuggestionsOpen && suggestions.length > 0} aria-describedby={`${inputId}-help`} aria-invalid={Boolean(error)} />
+    <p className="field-help" id={`${inputId}-help`}>{hint}</p>{error && <p className="field-error" role="alert">{error}</p>}{isSuggestionsOpen && isLoading && <p className="suggestion-state">Finding locations…</p>}{isSuggestionsOpen && requestError && <p className="field-error">{requestError}</p>}
+    {isSuggestionsOpen && !isLoading && !requestError && value.trim().length >= 2 && suggestions.length === 0 && <p className="suggestion-state">No suggestions found.</p>}
+    {isSuggestionsOpen && suggestions.length > 0 && <ul className="suggestions" id={suggestionsId} aria-label={`${label} suggestions`}>{suggestions.map((suggestion) => <li key={suggestion.id}><button type="button" onClick={() => selectSuggestion(suggestion)}><span>{suggestion.label}</span>{suggestion.address && <small>{suggestion.address}</small>}</button></li>)}</ul>}
   </div>
 }
 
