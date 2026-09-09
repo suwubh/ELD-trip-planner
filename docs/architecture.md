@@ -29,6 +29,15 @@ normalized plan response
 - **HOS engine owns:** deterministic scheduling only. It receives no Django request objects, makes no network calls, and receives a clock/start timestamp as an argument.
 - **No persistence:** plans are calculated per request and are not stored.
 
+## HERE provider boundary
+
+`trips.here_client.HereClient` is the only module that calls HERE. It reads `HERE_API_KEY` from Django's environment at runtime, uses bounded request timeouts, and maps provider/network/decode failures to internal typed errors. API views translate those errors into generic, credential-safe responses.
+
+- Location suggestions call HERE Geocoding & Search Autosuggest with a central-US search context and normalize `id`, label, address, and coordinates.
+- Submitted locations are resolved with HERE Geocoding before route planning.
+- Truck routes call Routing v8 with `transportMode=truck`, `origin`, pickup `via`, and `destination`; section summaries are converted to miles/minutes and HERE flexible polylines are decoded to latitude/longitude geometry.
+- Client tests patch the HTTP boundary (`urlopen`) and API-view tests patch the client. No test requires a HERE key or a network call.
+
 ## HOS engine design
 
 The engine models an ordered list of minute-precise events. Each event has `start`, `end`, `durationMinutes`, `dutyStatus`, `kind`, `required`, `reason`, and optional location/route context. Duty statuses are `off_duty`, `sleeper_berth`, `driving`, and `on_duty_not_driving`.

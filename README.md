@@ -65,6 +65,8 @@ Run backend checks and tests from `backend/`:
 
 The health endpoint is available at `http://localhost:8000/api/v1/health/`. The intended frontend development URL is `http://localhost:5173`.
 
+The available location-suggestion endpoint is `GET /api/v1/locations/suggest?q=Chicago`. It is backed by HERE from Django only; a local `HERE_API_KEY` is required for a live request.
+
 If this folder has not yet been linked to GitHub, initialize it or clone the existing remote before the first commit:
 
 ```powershell

@@ -2,9 +2,9 @@
 
 ## Current status
 
-- **Phase:** Checkpoint 2 complete — Django API foundation.
-- **Completed:** Project-context files, root hygiene files, Django/DRF project under `backend/`, environment-based settings, CORS, JSON-only REST configuration, health endpoint, validation envelope, typed API domain contracts, and pytest foundation tests.
-- **Application code:** API foundation only. HERE integration and HOS planning are not implemented.
+- **Phase:** Checkpoint 3 complete — HERE location and truck-routing integration.
+- **Completed:** Project-context files, Django/DRF API foundation, typed API domain contracts, backend-only HERE client, flexible-polyline decoding, `GET /api/v1/locations/suggest`, and mocked HERE/provider-failure tests.
+- **Application code:** HERE integration is ready; HOS scheduling and the successful trip-plan endpoint are not implemented.
 - **Repository state:** this workspace is not currently initialized as a local Git repository. The intended remote is `https://github.com/suwubh/ELD-trip-planner.git`.
 
 ## Active decisions
@@ -35,4 +35,4 @@
 
 ## Next action
 
-Implement the backend-only HERE client and location-suggestion endpoint (Checkpoint 3).
+Implement the pure minute-level HOS scheduling engine (Checkpoint 4).

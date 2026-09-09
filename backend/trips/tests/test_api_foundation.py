@@ -1,6 +1,9 @@
 import pytest
 from rest_framework.test import APIClient
 
+from trips.contracts import Position
+from trips.here_client import HereTimeoutError, LocationSuggestion
+
 
 @pytest.fixture
 def api_client() -> APIClient:
@@ -49,3 +52,29 @@ def test_trip_plan_validates_before_not_implemented_response(api_client: APIClie
 
     assert response.status_code == 501
     assert response.json()["error"]["code"] == "not_implemented"
+
+
+def test_location_suggestions_are_returned_from_here_client(api_client: APIClient, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "trips.views.HereClient.suggest",
+        lambda _self, _query, _limit: [
+            LocationSuggestion("here:1", "Chicago, IL", "Chicago, IL, United States", Position(41.8781, -87.6298))
+        ],
+    )
+
+    response = api_client.get("/api/v1/locations/suggest?q=Chicago")
+
+    assert response.status_code == 200
+    assert response.json()["suggestions"][0]["label"] == "Chicago, IL"
+
+
+def test_location_suggestions_handle_here_timeout(api_client: APIClient, monkeypatch) -> None:
+    def raise_timeout(*_args, **_kwargs):
+        raise HereTimeoutError()
+
+    monkeypatch.setattr("trips.views.HereClient.suggest", raise_timeout)
+
+    response = api_client.get("/api/v1/locations/suggest?q=Chicago")
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "locations_unavailable"

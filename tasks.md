@@ -43,16 +43,16 @@
 
 ## Checkpoint 3 — HERE geocoding and truck routing integration
 
-- [ ] Implement a backend-only HERE client; read `HERE_API_KEY` exclusively from server environment configuration.
-- [ ] Implement `GET /api/v1/locations/suggest` with a required query, sensible result limit, normalized suggestion payload, and explicit invalid-query response.
-- [ ] Geocode/resolve submitted pickup and delivery locations before planning; reject ambiguous/unresolvable locations with actionable errors.
-- [ ] Request HERE truck routing with truck-appropriate transport mode/settings and extract distance, duration, geometry/polyline, and route-leg information needed by the UI and scheduler.
-- [ ] Add timeouts and translate HERE timeout, HTTP failure, malformed-response, no-result, and routing-unavailable cases into safe API errors.
-- [ ] Keep provider response details out of client errors and source control; log only safe diagnostic context if logging is added.
-- [ ] Add mocked API tests for suggestion success, geocoding failure, routing failure, malformed provider data, and timeout.
-- [ ] Document the provider boundary, response normalization, and local test mocking approach.
-- [ ] **Acceptance check:** no HERE call is made from the browser and mocked tests prove all defined provider outcomes.
-- [ ] **Commit checkpoint:** `feat: add here location and truck routing api`.
+- [x] Implement a backend-only HERE client; read `HERE_API_KEY` exclusively from server environment configuration.
+- [x] Implement `GET /api/v1/locations/suggest` with a required query, sensible result limit, normalized suggestion payload, and explicit invalid-query response.
+- [x] Geocode/resolve submitted pickup and delivery locations before planning; reject ambiguous/unresolvable locations with actionable errors.
+- [x] Request HERE truck routing with truck-appropriate transport mode/settings and extract distance, duration, geometry/polyline, and route-leg information needed by the UI and scheduler.
+- [x] Add timeouts and translate HERE timeout, HTTP failure, malformed-response, no-result, and routing-unavailable cases into safe API errors.
+- [x] Keep provider response details out of client errors and source control; log only safe diagnostic context if logging is added.
+- [x] Add mocked API tests for suggestion success, geocoding failure, routing failure, malformed provider data, and timeout.
+- [x] Document the provider boundary, response normalization, and local test mocking approach.
+- [x] **Acceptance check:** no HERE call is made from the browser and mocked tests prove all defined provider outcomes.
+- [x] **Commit checkpoint:** `feat: add here location and truck routing api`.
 
 ## Checkpoint 4 — Pure HOS scheduling engine
 

@@ -20,3 +20,6 @@ Keep this file factual. Add an entry only after it is verified by an authoritati
 - On 2026-09-09, Python `3.12.6` was available at `C:\Users\subha\AppData\Local\Programs\Python\Python312\python.exe`, while the `python` app alias remained unusable in this shell. Use the project virtual environment executable directly in documented commands.
 - On 2026-09-09, the local Git remote was configured as `https://github.com/suwubh/ELD-trip-planner.git`; checkpoint commits remain local until explicitly pushed.
 - Django `5.2.17` and the pytest suite run successfully in `.venv`. The API uses a custom REST Framework exception handler so field validation is returned in the documented `error` envelope.
+- HERE Autosuggest requires a search context; the backend supplies a central-US `at` coordinate and normalizes only items with a usable position. The browser never calls HERE.
+- HERE Routing v8 uses `transportMode=truck`; `origin`, `via`, and `destination` produce ordered route sections. General truck restrictions apply, but vehicle-specific restrictions require vehicle parameters that this lean assessment does not collect.
+- HERE route polylines are flexible polylines. The backend decodes them to coordinate arrays and has a regression test using HERE's canonical sample.
