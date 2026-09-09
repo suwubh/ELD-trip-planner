@@ -76,17 +76,32 @@ git remote add origin https://github.com/suwubh/ELD-trip-planner.git
 
 ## Testing and quality gates
 
-The completed project will provide:
+Run the backend checks from `backend/`:
+
+```powershell
+& ..\.venv\Scripts\python.exe -m pytest
+& ..\.venv\Scripts\python.exe manage.py check
+```
+
+Run the frontend checks from `frontend/`:
+
+```powershell
+npm.cmd run lint
+npm.cmd run test
+npm.cmd run build
+npm.cmd run test:e2e
+```
 
 - Pytest/Django tests for validation, HOS scheduling, log consistency, and mocked HERE failures.
 - Vitest tests for form states, compliance explanations, itinerary, and SVG logs.
 - Playwright coverage for a mocked multi-day plan, map/results, multiple logs, and print control.
-- GitHub Actions for backend tests plus frontend lint, type-check, tests, and production build on every push.
+- [GitHub Actions](.github/workflows/ci.yml) runs backend tests plus frontend lint, unit tests, production build, and Playwright Chromium coverage on every push and pull request.
 
 ## Deployment
 
-- Deploy `frontend/` to Vercel and set `VITE_API_BASE_URL` to the Render API URL.
-- Deploy `backend/` to Render and configure the Django secret key, HERE key, allowed hosts, and Vercel CORS origin there.
+- [`render.yaml`](render.yaml) defines the Render Django web service. Create it from the repository Blueprint, then set `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, and `HERE_API_KEY` in Render; Render generates `DJANGO_SECRET_KEY` and the blueprint sets `DJANGO_DEBUG=false`.
+- Deploy `frontend/` to Vercel with `frontend` as the project root. The included [`frontend/vercel.json`](frontend/vercel.json) preserves SPA deep links. Set `VITE_API_BASE_URL` to the deployed Render API origin (without a trailing slash).
+- After the Vercel URL exists, set Render's `DJANGO_CORS_ALLOWED_ORIGINS` to that exact HTTPS origin and set `DJANGO_ALLOWED_HOSTS` to the Render API hostname.
 - Never expose `HERE_API_KEY` to Vite, Vercel client code, GitHub, screenshots, or Loom.
 
 The final submission will contain the [GitHub repository](https://github.com/suwubh/ELD-trip-planner), deployed Vercel URL, and 3–5 minute Loom.

@@ -65,6 +65,8 @@ The engine returns machine-readable reasons as well as a plain-language explanat
 
 `DJANGO_CORS_ALLOWED_ORIGINS` must include the final Vercel HTTPS origin. Secrets are configured in host dashboards, never in Git or `VITE_` variables.
 
+The repository includes `render.yaml` for the API service, `frontend/vercel.json` for Vite SPA deep-link support, and `.github/workflows/ci.yml` for backend, frontend, and Playwright verification. Deployment remains a dashboard action because the HERE key and final host URLs must be supplied as host-managed environment variables.
+
 ## API specification
 
 All endpoints are JSON under `/api/v1`. Error payloads use a stable envelope and never expose HERE response bodies or credentials.
