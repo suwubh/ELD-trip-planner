@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Django
+*.sqlite3
+staticfiles/
+media/
+
+# Node / Vite / Playwright
+node_modules/
+dist/
+.vite/
+playwright-report/
+test-results/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+#personal docs
+tasks.md
+state.md
+lessons.md
