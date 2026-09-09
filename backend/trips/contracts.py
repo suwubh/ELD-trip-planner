@@ -63,6 +63,7 @@ class ComplianceSummary:
     cycle_hours_remaining: float
     summary: str
     next_required_stop: TimelineEvent | None = None
+    restart_performed: bool = False
 
 
 @dataclass(frozen=True, slots=True)
