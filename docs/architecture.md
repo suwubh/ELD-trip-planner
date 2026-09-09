@@ -2,7 +2,7 @@
 
 ## Overview
 
-Linehaul Ledger is a stateless single-page trip-planning application. A React/Vite frontend collects four inputs—current location, pickup location, dropoff location, and current cycle-used hours—and sends them to a Django REST API. Django resolves locations and obtains an HGV route from openrouteservice (ORS), then passes normalized route data to a pure Hours-of-Service (HOS) scheduling module. The API returns display-ready route, compliance, itinerary, and daily-log data. React renders those results with React Leaflet/OpenStreetMap and printable SVG log sheets.
+Linehaul Ledger is a stateless single-page trip-planning application. A React/Vite frontend collects four inputs—current location, pickup location, dropoff location, and current cycle-used hours—and sends them to a Django REST API. Django resolves locations and obtains a commercial truck route from TomTom, then passes normalized route data to a pure Hours-of-Service (HOS) scheduling module. The API returns display-ready route, compliance, itinerary, and daily-log data. React renders those results with React Leaflet/OpenStreetMap and printable SVG log sheets.
 
 The planner starts at the browser time at which the plan is requested. That timestamp is client metadata, not a fifth form input. The requested route order is current location → pickup → dropoff.
 
@@ -17,7 +17,7 @@ React + TypeScript (Vercel)
 Django REST API (Render)
   validation / error mapping / API orchestration
           |
-          +--> ORS client: geocoding + HGV routing (ORS_API_KEY, server only)
+          +--> TomTom client: search + commercial truck routing (TOMTOM_API_KEY, server only)
           |
           +--> pure HOS engine: minute events, compliance, daily-log grouping
           v
@@ -25,18 +25,18 @@ normalized plan response
 ```
 
 - **Frontend owns:** input interaction, browser start timestamp capture, accessibility, API request states, map presentation, itinerary/compliance display, SVG rendering, and browser print/save-PDF action.
-- **Backend owns:** request validation, ORS calls, all route/provider normalization, HOS decisions, daily-log data generation, and safe error responses.
+- **Backend owns:** request validation, TomTom calls, all route/provider normalization, HOS decisions, daily-log data generation, and safe error responses.
 - **HOS engine owns:** deterministic scheduling only. It receives no Django request objects, makes no network calls, and receives a clock/start timestamp as an argument.
 - **No persistence:** plans are calculated per request and are not stored.
 
-## ORS provider boundary
+## TomTom provider boundary
 
-`trips.ors_client.OrsClient` is the only module that calls ORS. It reads `ORS_API_KEY` from Django's environment at runtime, uses bounded request timeouts, and maps provider/network/decode failures to internal typed errors. API views translate those errors into generic, credential-safe responses.
+`trips.tomtom_client.TomTomClient` is the only module that calls TomTom. It reads `TOMTOM_API_KEY` from Django's environment at runtime, uses bounded request timeouts, and maps provider/network/decode failures to internal typed errors. API views translate those errors into generic, credential-safe responses.
 
-- Location suggestions call ORS Pelias autocomplete and normalize `id`, label, address, and coordinates.
-- Submitted locations are resolved with ORS Pelias geocoding before route planning.
-- The client makes one `driving-hgv` GeoJSON route request per route leg (current → pickup, then pickup → dropoff). ORS's longitude/latitude coordinates are normalized to the application’s latitude/longitude contract and distance/duration values are converted to miles/minutes.
-- Client tests patch the HTTP boundary (`urlopen`) and API-view tests patch the client. No test requires an ORS key or a network call.
+- Location suggestions use TomTom Search typeahead and normalize `id`, label, address, and coordinates.
+- Submitted locations are resolved with TomTom Search before route planning.
+- The client makes one TomTom `travelMode=truck` and `vehicleCommercial=true` route request per route leg (current → pickup, then pickup → dropoff). TomTom route points are latitude/longitude; distance and duration values are converted from metres/seconds to miles/minutes.
+- Client tests patch the HTTP boundary (`urlopen`) and API-view tests patch the client. No test requires a TomTom key or a network call.
 
 ## HOS engine design
 
@@ -59,21 +59,21 @@ The engine returns machine-readable reasons as well as a plain-language explanat
 | Component | Host | Configuration |
 | --- | --- | --- |
 | React/Vite SPA | Vercel | `VITE_API_BASE_URL` set to the deployed Django API origin |
-| Django REST API | Render | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `ORS_API_KEY` |
-| Geocoding and HGV routing | openrouteservice | Called only by Django with `ORS_API_KEY` |
+| Django REST API | Render | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG=false`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CORS_ALLOWED_ORIGINS`, `TOMTOM_API_KEY` |
+| Geocoding and commercial truck routing | TomTom | Called only by Django with `TOMTOM_API_KEY` |
 | Base map tiles | OpenStreetMap via React Leaflet | Attribution visibly retained in the UI |
 
 `DJANGO_CORS_ALLOWED_ORIGINS` must include the final Vercel HTTPS origin. Secrets are configured in host dashboards, never in Git or `VITE_` variables.
 
-The repository includes `render.yaml` for the API service, `frontend/vercel.json` for Vite SPA deep-link support, and `.github/workflows/ci.yml` for backend, frontend, and Playwright verification. Deployment remains a dashboard action because the ORS key and final host URLs must be supplied as host-managed environment variables.
+The repository includes `render.yaml` for the API service, `frontend/vercel.json` for Vite SPA deep-link support, and `.github/workflows/ci.yml` for backend, frontend, and Playwright verification. Deployment remains a dashboard action because the TomTom key and final host URLs must be supplied as host-managed environment variables.
 
 ## API specification
 
-All endpoints are JSON under `/api/v1`. Error payloads use a stable envelope and never expose ORS response bodies or credentials.
+All endpoints are JSON under `/api/v1`. Error payloads use a stable envelope and never expose TomTom response bodies or credentials.
 
 ### `GET /api/v1/locations/suggest`
 
-Returns normalized ORS-backed location suggestions for a form field.
+Returns normalized TomTom-backed location suggestions for a form field.
 
 **Query parameters**
 
@@ -88,7 +88,7 @@ Returns normalized ORS-backed location suggestions for a form field.
 {
   "suggestions": [
     {
-      "id": "ors:place:chicago",
+      "id": "tomtom:place:chicago",
       "label": "Chicago, Illinois, United States",
       "address": "Chicago, IL, United States",
       "position": { "lat": 41.8781, "lng": -87.6298 }

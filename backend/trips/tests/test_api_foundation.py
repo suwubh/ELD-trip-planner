@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from trips.contracts import Position
-from trips.ors_client import LocationSuggestion, OrsTimeoutError
+from trips.tomtom_client import LocationSuggestion, TomTomTimeoutError
 
 
 @pytest.fixture
@@ -54,11 +54,11 @@ def test_trip_plan_returns_safe_routing_error_after_valid_input(api_client: APIC
     assert response.json()["error"]["code"] == "routing_unavailable"
 
 
-def test_location_suggestions_are_returned_from_ors_client(api_client: APIClient, monkeypatch) -> None:
+def test_location_suggestions_are_returned_from_tomtom_client(api_client: APIClient, monkeypatch) -> None:
     monkeypatch.setattr(
-        "trips.views.OrsClient.suggest",
+        "trips.views.TomTomClient.suggest",
         lambda _self, _query, _limit: [
-            LocationSuggestion("ors:1", "Chicago, IL", "Chicago, IL, United States", Position(41.8781, -87.6298))
+            LocationSuggestion("tomtom:1", "Chicago, IL", "Chicago, IL, United States", Position(41.8781, -87.6298))
         ],
     )
 
@@ -68,11 +68,11 @@ def test_location_suggestions_are_returned_from_ors_client(api_client: APIClient
     assert response.json()["suggestions"][0]["label"] == "Chicago, IL"
 
 
-def test_location_suggestions_handle_ors_timeout(api_client: APIClient, monkeypatch) -> None:
+def test_location_suggestions_handle_tomtom_timeout(api_client: APIClient, monkeypatch) -> None:
     def raise_timeout(*_args, **_kwargs):
-        raise OrsTimeoutError()
+        raise TomTomTimeoutError()
 
-    monkeypatch.setattr("trips.views.OrsClient.suggest", raise_timeout)
+    monkeypatch.setattr("trips.views.TomTomClient.suggest", raise_timeout)
 
     response = api_client.get("/api/v1/locations/suggest?q=Chicago")
 
