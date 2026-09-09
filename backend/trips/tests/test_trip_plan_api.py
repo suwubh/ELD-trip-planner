@@ -4,7 +4,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from trips.contracts import Location, Position, Route, RouteLeg
-from trips.here_client import HereNotFoundError, HereResponseError, HereTimeoutError
+from trips.ors_client import OrsNotFoundError, OrsResponseError, OrsTimeoutError
 
 
 @pytest.fixture
@@ -36,8 +36,8 @@ def _payload() -> dict:
 
 def test_trip_plan_returns_normalized_route_events_and_daily_logs(api_client: APIClient, route: Route, monkeypatch) -> None:
     locations = [leg.origin for leg in route.legs] + [route.legs[-1].destination]
-    monkeypatch.setattr("trips.views.HereClient.geocode", lambda _self, _query: locations.pop(0))
-    monkeypatch.setattr("trips.views.HereClient.truck_route", lambda _self, *_locations: route)
+    monkeypatch.setattr("trips.views.OrsClient.geocode", lambda _self, _query: locations.pop(0))
+    monkeypatch.setattr("trips.views.OrsClient.truck_route", lambda _self, *_locations: route)
 
     response = api_client.post("/api/v1/trips/plan", _payload(), format="json")
 
@@ -57,7 +57,7 @@ def test_trip_plan_returns_normalized_route_events_and_daily_logs(api_client: AP
 
 
 def test_trip_plan_maps_unresolved_location_to_actionable_error(api_client: APIClient, monkeypatch) -> None:
-    monkeypatch.setattr("trips.views.HereClient.geocode", lambda *_args: (_ for _ in ()).throw(HereNotFoundError()))
+    monkeypatch.setattr("trips.views.OrsClient.geocode", lambda *_args: (_ for _ in ()).throw(OrsNotFoundError()))
 
     response = api_client.post("/api/v1/trips/plan", _payload(), format="json")
 
@@ -67,10 +67,10 @@ def test_trip_plan_maps_unresolved_location_to_actionable_error(api_client: APIC
 
 def test_trip_plan_maps_routing_failure_to_safe_error(api_client: APIClient, route: Route, monkeypatch) -> None:
     locations = [leg.origin for leg in route.legs] + [route.legs[-1].destination]
-    monkeypatch.setattr("trips.views.HereClient.geocode", lambda _self, _query: locations.pop(0))
+    monkeypatch.setattr("trips.views.OrsClient.geocode", lambda _self, _query: locations.pop(0))
     monkeypatch.setattr(
-        "trips.views.HereClient.truck_route",
-        lambda *_args: (_ for _ in ()).throw(HereResponseError()),
+        "trips.views.OrsClient.truck_route",
+        lambda *_args: (_ for _ in ()).throw(OrsResponseError()),
     )
 
     response = api_client.post("/api/v1/trips/plan", _payload(), format="json")
@@ -80,7 +80,7 @@ def test_trip_plan_maps_routing_failure_to_safe_error(api_client: APIClient, rou
 
 
 def test_trip_plan_maps_timeout_to_gateway_timeout(api_client: APIClient, monkeypatch) -> None:
-    monkeypatch.setattr("trips.views.HereClient.geocode", lambda *_args: (_ for _ in ()).throw(HereTimeoutError()))
+    monkeypatch.setattr("trips.views.OrsClient.geocode", lambda *_args: (_ for _ in ()).throw(OrsTimeoutError()))
 
     response = api_client.post("/api/v1/trips/plan", _payload(), format="json")
 

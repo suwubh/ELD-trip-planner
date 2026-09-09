@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from trips.contracts import ComplianceSummary, DailyLog, Location, Position, Route, RouteLeg, TimelineEvent, TripPlan
-from trips.here_client import HereClient, HereClientError, HereNotFoundError, HereTimeoutError
+from trips.ors_client import OrsClient, OrsClientError, OrsNotFoundError, OrsTimeoutError
 from trips.hos import HosPlanningError, plan_trip
 from trips.serializers import TripPlanRequestSerializer
 
@@ -39,8 +39,8 @@ class LocationSuggestView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
-            suggestions = HereClient().suggest(query, limit)
-        except HereClientError:
+            suggestions = OrsClient().suggest(query, limit)
+        except OrsClientError:
             return Response(
                 {"error": {"code": "locations_unavailable", "message": "Location suggestions are temporarily unavailable."}},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -55,14 +55,14 @@ class TripPlanView(APIView):
         serializer = TripPlanRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
-        client = HereClient()
+        client = OrsClient()
         try:
             current = client.geocode(data["currentLocation"]["query"])
             pickup = client.geocode(data["pickupLocation"]["query"])
             dropoff = client.geocode(data["dropoffLocation"]["query"])
             route = client.truck_route(current, pickup, dropoff)
             plan = plan_trip(route, data["startTime"], data["currentCycleUsedHours"])
-        except HereNotFoundError:
+        except OrsNotFoundError:
             return Response(
                 {
                     "error": {
@@ -72,7 +72,7 @@ class TripPlanView(APIView):
                 },
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,
             )
-        except HereTimeoutError:
+        except OrsTimeoutError:
             return Response(
                 {
                     "error": {
@@ -82,7 +82,7 @@ class TripPlanView(APIView):
                 },
                 status=status.HTTP_504_GATEWAY_TIMEOUT,
             )
-        except HereClientError:
+        except OrsClientError:
             return Response(
                 {
                     "error": {

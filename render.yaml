@@ -16,5 +16,5 @@ services:
         sync: false
       - key: DJANGO_CORS_ALLOWED_ORIGINS
         sync: false
-      - key: HERE_API_KEY
+      - key: ORS_API_KEY
         sync: false

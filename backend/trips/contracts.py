@@ -1,7 +1,7 @@
 """Typed domain contracts shared by routing, HOS scheduling, and API views.
 
-These are framework-independent containers. Later checkpoints populate them from
-HERE responses and serialize them into the documented public response shape.
+These are framework-independent containers. Provider adapters populate them and
+serialize them into the documented public response shape.
 """
 
 from dataclasses import dataclass, field
