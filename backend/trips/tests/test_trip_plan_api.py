@@ -86,3 +86,35 @@ def test_trip_plan_maps_timeout_to_gateway_timeout(api_client: APIClient, monkey
 
     assert response.status_code == 504
     assert response.json()["error"]["code"] == "routing_timeout"
+
+
+def test_trip_plan_rejects_naive_start_time(api_client: APIClient) -> None:
+    payload = _payload()
+    payload["startTime"] = "2026-09-09T09:15:00"  # No timezone offset
+
+    response = api_client.post("/api/v1/trips/plan", payload, format="json")
+
+    assert response.status_code == 400
+    assert "startTime" in response.json()["error"]["fields"]
+
+
+def test_trip_plan_accepts_pre_resolved_positions(api_client: APIClient, route: Route, monkeypatch) -> None:
+    geocode_called = []
+    monkeypatch.setattr("trips.views.TomTomClient.geocode", lambda _self, query: geocode_called.append(query))
+    monkeypatch.setattr("trips.views.TomTomClient.truck_route", lambda _self, *_locations: route)
+
+    payload = {
+        "currentLocation": {"query": "Chicago, IL", "position": {"lat": 41.8781, "lng": -87.6298}},
+        "pickupLocation": {"query": "Indianapolis, IN", "position": {"lat": 39.7684, "lng": -86.1581}},
+        "dropoffLocation": {"query": "Columbus, OH", "position": {"lat": 39.9612, "lng": -82.9988}},
+        "currentCycleUsedHours": 10.0,
+        "startTime": "2026-09-09T08:00:00-05:00",
+    }
+
+    response = api_client.post("/api/v1/trips/plan", payload, format="json")
+    assert response.status_code == 200
+    assert len(geocode_called) == 0  # No geocode calls made because positions were passed!
+    data = response.json()
+    assert "dayNumber" in data["dailyLogs"][0]
+    assert "recap" in data["dailyLogs"][0]
+

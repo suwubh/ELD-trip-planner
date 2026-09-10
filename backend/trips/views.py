@@ -48,6 +48,18 @@ class LocationSuggestView(APIView):
         return Response({"suggestions": [suggestion.as_dict() for suggestion in suggestions]})
 
 
+def _resolve_location(client: TomTomClient, location_data: dict) -> Location:
+    query = location_data.get("query", "").strip()
+    pos_data = location_data.get("position")
+    if pos_data and isinstance(pos_data, dict) and "lat" in pos_data and "lng" in pos_data:
+        return Location(
+            label=query,
+            position=Position(lat=float(pos_data["lat"]), lng=float(pos_data["lng"])),
+            address=location_data.get("address"),
+        )
+    return client.geocode(query)
+
+
 class TripPlanView(APIView):
     """Resolve locations, route the truck, and return a client-ready HOS plan."""
 
@@ -57,9 +69,9 @@ class TripPlanView(APIView):
         data = serializer.validated_data
         client = TomTomClient()
         try:
-            current = client.geocode(data["currentLocation"]["query"])
-            pickup = client.geocode(data["pickupLocation"]["query"])
-            dropoff = client.geocode(data["dropoffLocation"]["query"])
+            current = _resolve_location(client, data["currentLocation"])
+            pickup = _resolve_location(client, data["pickupLocation"])
+            dropoff = _resolve_location(client, data["dropoffLocation"])
             route = client.truck_route(current, pickup, dropoff)
             plan = plan_trip(route, data["startTime"], data["currentCycleUsedHours"])
         except TomTomNotFoundError:
@@ -171,6 +183,7 @@ def _event_payload(event: TimelineEvent, event_id: str | None = None) -> dict:
         "start": event.start.isoformat(),
         "end": event.end.isoformat(),
         "durationMinutes": _event_duration_minutes(event),
+        "distanceMiles": round(getattr(event, "distance_miles", 0.0), 1),
         "required": event.required,
         "reason": event.reason,
         "location": _location_payload(event.location) if event.location else None,
@@ -203,7 +216,12 @@ def _compliance_payload(summary: ComplianceSummary, event_ids: dict[int, str]) -
 def _daily_log_payload(log: DailyLog) -> dict:
     return {
         "date": log.date,
+        "dayNumber": getattr(log, "day_number", 1),
+        "totalMilesDrivingToday": getattr(log, "total_miles_driving_today", 0.0),
+        "startLocation": getattr(log, "start_location", ""),
+        "endLocation": getattr(log, "end_location", ""),
         "events": [_event_payload(event) for event in log.events],
         "totalsMinutes": log.totals_minutes,
         "remarks": list(log.remarks),
+        "recap": getattr(log, "recap", {}),
     }
