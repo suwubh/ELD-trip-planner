@@ -58,13 +58,20 @@ def plan_trip(route: Route, start_time: datetime, current_cycle_used_hours: floa
         elif index == len(route.legs) - 1:
             _schedule_service("dropoff_service", "One hour of on-duty time for dropoff.", leg.destination, state, events)
 
-    compliance = _build_compliance(state)
+    # Identify the next required HOS stop (fuel, break, reset, restart) after departure
+    next_required = None
+    for event in events:
+        if (event.required or event.kind == "cycle_restart") and event.kind not in ("pickup_service", "dropoff_service"):
+            next_required = event
+            break
+
+    compliance = _build_compliance(state, next_required)
     frozen_events = tuple(events)
     return TripPlan(
         route=route,
         events=frozen_events,
         compliance=compliance,
-        daily_logs=_build_daily_logs(frozen_events),
+        daily_logs=_build_daily_logs(frozen_events, start_time, route, current_cycle_used_hours),
     )
 
 
@@ -105,6 +112,7 @@ def _schedule_leg(duration_minutes: int, distance_miles: float, destination, sta
             "Driving planned route segment.",
             destination,
             state,
+            distance_miles=round(distance, 1),
         )
         state.driving_today += available_minutes
         state.driving_since_break += available_minutes
@@ -202,8 +210,8 @@ def _insert_restart(state: _ScheduleState, events: list[TimelineEvent]) -> None:
         "cycle_restart",
         "off_duty",
         CYCLE_RESTART_MINUTES,
-        True,
-        "34-hour restart required before on-duty work would exceed the modeled 70-hour cycle.",
+        False,
+        "Optional 34-hour cycle restart taken to reset 70-hour cycle before further driving.",
         None,
         state,
     )
@@ -223,17 +231,21 @@ def _append_event(
     reason: str,
     location,
     state: _ScheduleState,
+    distance_miles: float = 0.0,
 ) -> None:
     start = state.current_time
     end = start + timedelta(minutes=duration_minutes)
-    events.append(TimelineEvent(kind, duty_status, start, end, required, reason, location))
+    events.append(TimelineEvent(kind, duty_status, start, end, required, reason, location, distance_miles))
     state.current_time = end
 
 
-def _build_compliance(state: _ScheduleState) -> ComplianceSummary:
+def _build_compliance(state: _ScheduleState, next_required: TimelineEvent | None = None) -> ComplianceSummary:
     driving_remaining = max(0, MAX_DRIVING_MINUTES - state.driving_today)
     window_remaining = max(0, MAX_DUTY_WINDOW_MINUTES - state.duty_window_used)
     cycle_remaining = max(0, CYCLE_LIMIT_MINUTES - state.cycle_used)
+    summary_text = "Trip is scheduled within modeled HOS limits."
+    if next_required:
+        summary_text = f"Trip scheduled within HOS limits. Next stop: {next_required.reason}"
     return ComplianceSummary(
         is_compliant=True,
         driving_hours_used=round(state.driving_today / MINUTES_PER_HOUR, 2),
@@ -241,38 +253,206 @@ def _build_compliance(state: _ScheduleState) -> ComplianceSummary:
         daily_window_hours_remaining=round(window_remaining / MINUTES_PER_HOUR, 2),
         cycle_hours_used=round(state.cycle_used / MINUTES_PER_HOUR, 2),
         cycle_hours_remaining=round(cycle_remaining / MINUTES_PER_HOUR, 2),
-        summary="Trip is scheduled within the modeled HOS limits.",
-        next_required_stop=None,
+        summary=summary_text,
+        next_required_stop=next_required,
         restart_performed=state.restart_performed,
     )
 
 
-def _build_daily_logs(events: tuple[TimelineEvent, ...]) -> tuple[DailyLog, ...]:
+def _build_daily_logs(
+    events: tuple[TimelineEvent, ...],
+    start_time: datetime,
+    route: Route,
+    initial_cycle_used: float = 0.0,
+) -> tuple[DailyLog, ...]:
+    if not events:
+        return ()
+
     by_date: dict[str, list[TimelineEvent]] = defaultdict(list)
     for event in events:
         cursor = event.start
+        total_duration = _duration_minutes(event)
         while cursor.date() < event.end.date():
             midnight = datetime.combine(cursor.date() + timedelta(days=1), datetime.min.time(), tzinfo=cursor.tzinfo)
+            part_duration = int((midnight - cursor).total_seconds() // 60)
+            fraction = (part_duration / total_duration) if total_duration > 0 else 1.0
             by_date[cursor.date().isoformat()].append(
-                TimelineEvent(event.kind, event.duty_status, cursor, midnight, event.required, event.reason, event.location)
+                TimelineEvent(
+                    event.kind,
+                    event.duty_status,
+                    cursor,
+                    midnight,
+                    event.required,
+                    event.reason,
+                    event.location,
+                    round(event.distance_miles * fraction, 1),
+                )
             )
             cursor = midnight
+        part_duration = int((event.end - cursor).total_seconds() // 60)
+        fraction = (part_duration / total_duration) if total_duration > 0 else 1.0
         by_date[cursor.date().isoformat()].append(
-            TimelineEvent(event.kind, event.duty_status, cursor, event.end, event.required, event.reason, event.location)
+            TimelineEvent(
+                event.kind,
+                event.duty_status,
+                cursor,
+                event.end,
+                event.required,
+                event.reason,
+                event.location,
+                round(event.distance_miles * fraction, 1),
+            )
         )
 
+    restarts = [ev for ev in events if ev.kind == "cycle_restart"]
     logs = []
-    for date, day_events in sorted(by_date.items()):
+    sorted_dates = sorted(by_date.keys())
+    running_cycle = initial_cycle_used
+    origin_loc = route.legs[0].origin if route.legs else None
+    dest_loc = route.legs[-1].destination if route.legs else None
+
+    for day_index, date_str in enumerate(sorted_dates, start=1):
+        day_events = by_date[date_str]
+        day_date = datetime.fromisoformat(date_str).date()
+        tz = day_events[0].start.tzinfo
+
+        day_start = datetime.combine(day_date, datetime.min.time(), tzinfo=tz)
+        day_end = datetime.combine(day_date + timedelta(days=1), datetime.min.time(), tzinfo=tz)
+
+        # Pad initial off-duty from midnight to the first event if there is a gap
+        if day_events[0].start > day_start:
+            first_loc = day_events[0].location or origin_loc
+            day_events.insert(
+                0,
+                TimelineEvent(
+                    kind="off_duty",
+                    duty_status="off_duty",
+                    start=day_start,
+                    end=day_events[0].start,
+                    required=False,
+                    reason="Off duty prior to shift departure.",
+                    location=first_loc,
+                    distance_miles=0.0,
+                ),
+            )
+
+        # Fill any intermediate gaps between events with off_duty
+        padded: list[TimelineEvent] = []
+        for i, ev in enumerate(day_events):
+            padded.append(ev)
+            if i < len(day_events) - 1:
+                next_ev = day_events[i + 1]
+                if ev.end < next_ev.start:
+                    gap_loc = ev.location or next_ev.location or origin_loc
+                    padded.append(
+                        TimelineEvent(
+                            kind="off_duty",
+                            duty_status="off_duty",
+                            start=ev.end,
+                            end=next_ev.start,
+                            required=False,
+                            reason="Off duty between scheduled assignments.",
+                            location=gap_loc,
+                            distance_miles=0.0,
+                        )
+                    )
+        day_events = padded
+
+        # Pad final off-duty from the last event to midnight
+        if day_events[-1].end < day_end:
+            last_loc = day_events[-1].location or dest_loc
+            day_events.append(
+                TimelineEvent(
+                    kind="off_duty",
+                    duty_status="off_duty",
+                    start=day_events[-1].end,
+                    end=day_end,
+                    required=False,
+                    reason="Off duty after shift completion.",
+                    location=last_loc,
+                    distance_miles=0.0,
+                )
+            )
+
         totals: dict[DutyStatus, int] = {
             "off_duty": 0,
             "sleeper_berth": 0,
             "driving": 0,
             "on_duty_not_driving": 0,
         }
-        for event in day_events:
-            totals[event.duty_status] += _duration_minutes(event)
-        remarks = tuple(event.reason for event in day_events if event.required)
-        logs.append(DailyLog(date, tuple(day_events), totals, remarks))
+        for ev in day_events:
+            totals[ev.duty_status] += _duration_minutes(ev)
+
+        miles_today = round(sum(ev.distance_miles for ev in day_events if ev.duty_status == "driving"), 1)
+
+        # Build detailed remarks with time and location
+        remarks_list = []
+        for ev in day_events:
+            if ev.kind != "off_duty" or ev.required or ev.kind == "cycle_restart":
+                loc_str = ev.location.label if ev.location else "En route"
+                time_str = ev.start.strftime("%H:%M")
+                remarks_list.append(f"{time_str} - {loc_str}: {ev.reason}")
+        if not remarks_list:
+            remarks_list.append("Off duty entire calendar day.")
+
+        # 70-hour / 8-day rolling recap calculation (FMCSA 49 CFR § 395.3)
+        on_duty_today_hours = round((totals["driving"] + totals["on_duty_not_driving"]) / MINUTES_PER_HOUR, 2)
+
+        finishing_restart = next((r for r in restarts if day_start <= r.end <= day_end), None)
+        ongoing_restart = next((r for r in restarts if r.start < day_end and r.end > day_end), None)
+
+        if finishing_restart is not None:
+            # 34 consecutive hours off duty completed; cycle resets upon completion.
+            post_restart_mins = sum(
+                _duration_minutes(ev)
+                for ev in day_events
+                if ev.start >= finishing_restart.end and ev.duty_status in ("driving", "on_duty_not_driving")
+            )
+            running_cycle = round(post_restart_mins / MINUTES_PER_HOUR, 2)
+            if ongoing_restart is not None:
+                available_tomorrow = 0.0
+            else:
+                available_tomorrow = round(max(0.0, 70.0 - running_cycle), 2)
+        elif ongoing_restart is not None:
+            # Restart is in progress across midnight; cycle has not reset and driver cannot drive tomorrow.
+            running_cycle = round(running_cycle + on_duty_today_hours, 2)
+            available_tomorrow = 0.0
+        else:
+            running_cycle = round(running_cycle + on_duty_today_hours, 2)
+            available_tomorrow = round(max(0.0, 70.0 - running_cycle), 2)
+
+        recap = {
+            "onDutyTodayHours": on_duty_today_hours,
+            "totalHoursLast7Days": running_cycle,
+            "availableTomorrowHours": available_tomorrow,
+            "totalHoursLast8Days": running_cycle,
+        }
+
+        start_label = origin_loc.label if origin_loc else ""
+        end_label = dest_loc.label if dest_loc else ""
+        for ev in day_events:
+            if ev.location:
+                start_label = ev.location.label
+                break
+        for ev in reversed(day_events):
+            if ev.location:
+                end_label = ev.location.label
+                break
+
+        logs.append(
+            DailyLog(
+                date=date_str,
+                events=tuple(day_events),
+                totals_minutes=totals,
+                remarks=tuple(remarks_list),
+                total_miles_driving_today=miles_today,
+                day_number=day_index,
+                start_location=start_label,
+                end_location=end_label,
+                recap=recap,
+            )
+        )
+
     return tuple(logs)
 
 

@@ -91,6 +91,23 @@ def test_cycle_restart_is_inserted_before_on_duty_work_exceeds_seventy_hours() -
     assert plan.compliance.cycle_hours_used == 3.5
 
 
+def test_34_hour_restart_recap_does_not_reset_until_completion() -> None:
+    plan = plan_trip(_route(60, 60), _start(), 69.5)
+
+    assert len(plan.daily_logs) == 2
+    # Day 1: restart begins; cycle is exhausted and in progress across midnight
+    day1_recap = plan.daily_logs[0].recap
+    assert day1_recap["onDutyTodayHours"] == 0.5
+    assert day1_recap["totalHoursLast7Days"] == 70.0
+    assert day1_recap["availableTomorrowHours"] == 0.0
+
+    # Day 2: 34 consecutive off-duty hours complete; cycle resets
+    day2_recap = plan.daily_logs[1].recap
+    assert day2_recap["onDutyTodayHours"] == 3.5
+    assert day2_recap["totalHoursLast7Days"] == 3.5
+    assert day2_recap["availableTomorrowHours"] == 66.5
+
+
 def test_fractional_cycle_hours_are_rounded_up_conservatively() -> None:
     plan = plan_trip(_route(1, 1), _start(), 69.99)
 
@@ -108,3 +125,20 @@ def test_daily_logs_split_an_event_at_local_midnight_and_totals_match() -> None:
 def test_hos_engine_rejects_naive_start_time() -> None:
     with pytest.raises(HosPlanningError, match="timezone"):
         plan_trip(_route(10, 10), datetime(2026, 9, 9, 8), 0)
+
+
+def test_daily_logs_account_for_full_24_hours_each_day() -> None:
+    plan = plan_trip(_route(120, 180, 100.0, 150.0), _start(), 20)
+    for log in plan.daily_logs:
+        assert sum(log.totals_minutes.values()) == 1440
+        assert sum(_minutes(ev) for ev in log.events) == 1440
+    assert plan.daily_logs[0].total_miles_driving_today == 250.0
+    assert "onDutyTodayHours" in plan.daily_logs[0].recap
+
+
+def test_compliance_identifies_next_required_stop() -> None:
+    plan = plan_trip(_route(60, 540), _start(), 0)
+    assert plan.compliance.next_required_stop is not None
+    assert plan.compliance.next_required_stop.kind == "required_break"
+    assert "8 cumulative driving hours" in plan.compliance.next_required_stop.reason
+

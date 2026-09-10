@@ -51,6 +51,7 @@ class TimelineEvent:
     required: bool
     reason: str
     location: Location | None = None
+    distance_miles: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +73,11 @@ class DailyLog:
     events: tuple[TimelineEvent, ...]
     totals_minutes: dict[DutyStatus, int]
     remarks: tuple[str, ...] = field(default_factory=tuple)
+    total_miles_driving_today: float = 0.0
+    day_number: int = 1
+    start_location: str = ""
+    end_location: str = ""
+    recap: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
