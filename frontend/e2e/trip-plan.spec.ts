@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 const events = [
-  { id: 'event-001', kind: 'driving', dutyStatus: 'driving', start: '2026-09-09T08:00:00-05:00', end: '2026-09-09T16:00:00-05:00', durationMinutes: 480, required: false, reason: 'Driving planned route segment.', location: null },
-  { id: 'event-002', kind: 'required_break', dutyStatus: 'off_duty', start: '2026-09-09T16:00:00-05:00', end: '2026-09-09T16:30:00-05:00', durationMinutes: 30, required: true, reason: '30-minute non-driving break required after 8 cumulative driving hours.', location: null },
+  { id: 'event-001', kind: 'driving', dutyStatus: 'driving', start: '2026-09-09T08:00:00-05:00', end: '2026-09-09T14:50:00-05:00', durationMinutes: 410, required: false, reason: 'Driving planned route segment.', location: null },
+  { id: 'event-002', kind: 'required_break', dutyStatus: 'off_duty', start: '2026-09-09T14:50:00-05:00', end: '2026-09-09T15:20:00-05:00', durationMinutes: 30, required: true, reason: '30-minute non-driving break required after 8 cumulative driving hours.', location: null },
   { id: 'event-003', kind: 'daily_reset', dutyStatus: 'off_duty', start: '2026-09-10T00:00:00-05:00', end: '2026-09-10T10:00:00-05:00', durationMinutes: 600, required: true, reason: '10 consecutive hours off duty required.', location: null },
 ]
 
@@ -20,8 +20,36 @@ const plan = {
   events,
   itinerary: events,
   dailyLogs: [
-    { date: '2026-09-09', events: [{ kind: 'driving', dutyStatus: 'driving', start: '2026-09-09T08:00:00-05:00', end: '2026-09-10T00:00:00-05:00', durationMinutes: 960, required: false, reason: 'Driving planned route segment.', location: null }], totalsMinutes: { off_duty: 30, sleeper_berth: 0, driving: 930, on_duty_not_driving: 0 }, remarks: ['30-minute non-driving break required after 8 cumulative driving hours.'] },
-    { date: '2026-09-10', events: [{ kind: 'daily_reset', dutyStatus: 'off_duty', start: '2026-09-10T00:00:00-05:00', end: '2026-09-10T10:00:00-05:00', durationMinutes: 600, required: true, reason: '10 consecutive hours off duty required.', location: null }], totalsMinutes: { off_duty: 600, sleeper_berth: 0, driving: 0, on_duty_not_driving: 0 }, remarks: ['10 consecutive hours off duty required.'] },
+    {
+      date: '2026-09-09',
+      dayNumber: 1,
+      totalMilesDrivingToday: 359.0,
+      startLocation: 'Chicago, IL',
+      endLocation: 'Columbus, OH',
+      events: [
+        { kind: 'off_duty', dutyStatus: 'off_duty', start: '2026-09-09T00:00:00-05:00', end: '2026-09-09T08:00:00-05:00', durationMinutes: 480, required: false, reason: 'Off duty prior to shift departure.', location: null },
+        { kind: 'driving', dutyStatus: 'driving', start: '2026-09-09T08:00:00-05:00', end: '2026-09-09T14:50:00-05:00', durationMinutes: 410, required: false, reason: 'Driving planned route segment.', location: null },
+        { kind: 'required_break', dutyStatus: 'off_duty', start: '2026-09-09T14:50:00-05:00', end: '2026-09-09T15:20:00-05:00', durationMinutes: 30, required: true, reason: '30-minute non-driving break required after 8 cumulative driving hours.', location: null },
+        { kind: 'off_duty', dutyStatus: 'off_duty', start: '2026-09-09T15:20:00-05:00', end: '2026-09-10T00:00:00-05:00', durationMinutes: 520, required: false, reason: 'Off duty after shift completion.', location: null },
+      ],
+      totalsMinutes: { off_duty: 1030, sleeper_berth: 0, driving: 410, on_duty_not_driving: 0 },
+      remarks: ['14:50 - En route: 30-minute non-driving break required after 8 cumulative driving hours.'],
+      recap: { onDutyTodayHours: 6.83, totalHoursLast7Days: 49.33, availableTomorrowHours: 20.67, totalHoursLast8Days: 49.33 },
+    },
+    {
+      date: '2026-09-10',
+      dayNumber: 2,
+      totalMilesDrivingToday: 0.0,
+      startLocation: 'Columbus, OH',
+      endLocation: 'Columbus, OH',
+      events: [
+        { kind: 'daily_reset', dutyStatus: 'off_duty', start: '2026-09-10T00:00:00-05:00', end: '2026-09-10T10:00:00-05:00', durationMinutes: 600, required: true, reason: '10 consecutive hours off duty required.', location: null },
+        { kind: 'off_duty', dutyStatus: 'off_duty', start: '2026-09-10T10:00:00-05:00', end: '2026-09-11T00:00:00-05:00', durationMinutes: 840, required: false, reason: 'Off duty after shift completion.', location: null },
+      ],
+      totalsMinutes: { off_duty: 1440, sleeper_berth: 0, driving: 0, on_duty_not_driving: 0 },
+      remarks: ['00:00 - En route: 10 consecutive hours off duty required.'],
+      recap: { onDutyTodayHours: 0.0, totalHoursLast7Days: 49.33, availableTomorrowHours: 20.67, totalHoursLast8Days: 49.33 },
+    },
   ],
 }
 
