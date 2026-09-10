@@ -1,1 +1,446 @@
-.daily-logs{margin-top:20px}.daily-logs-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:16px}.daily-logs-heading h3{margin:7px 0 0;color:var(--navy);font:800 29px/1.05 var(--display);letter-spacing:-.045em}.daily-logs-heading p:not(.section-kicker){max-width:630px;margin:9px 0 0;color:var(--muted);font-size:14px;line-height:1.5}.print-logs{flex:none;border:0;border-radius:8px;padding:12px 16px;color:#fff;background:var(--navy);font:800 13px/1 var(--display);cursor:pointer}.print-logs:hover{background:#183d62}.print-logs:focus-visible{outline:3px solid rgba(236,126,39,.35);outline-offset:3px}.log-sheets{display:grid;gap:20px}.daily-log-sheet{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:var(--paper);box-shadow:0 12px 34px rgba(18,35,64,.05)}.daily-log-sheet svg{display:block;width:100%;height:auto;background:#fffefa}.log-paper{fill:#fffefa;stroke:#b8c4d1;stroke-width:2}.log-title{fill:#102a43;font:800 28px/1 var(--display)}.log-subtitle,.log-field-label{fill:#617286;font:700 11px/1 var(--mono);letter-spacing:.06em}.log-field-value{fill:#182b3d;font:700 14px/1 var(--display)}.log-rule{stroke:#b8c4d1;stroke-width:1}.log-grid-outline{fill:#fff;border:1px solid #718197;stroke:#718197}.log-row-label{fill:#182b3d;font:700 13px/1 var(--display)}.log-hour{stroke:#dbe3eb;stroke-width:1}.log-hour-major{stroke:#91a1b4;stroke-width:1.5}.log-hour-label{fill:#617286;font:700 9px/1 var(--mono)}.log-event-segment{stroke-width:11;stroke-linecap:round}.log-total-box{fill:#f7f9fb;stroke:#dbe3eb}.log-total-label{fill:#617286;font:700 10px/1 var(--display)}.log-total-value{fill:#102a43;font:800 15px/1 var(--mono)}.log-remark{fill:#182b3d;font:12px/1.3 var(--display)}@media(max-width:650px){.daily-logs-heading{align-items:start;flex-direction:column}.print-logs{width:100%}.daily-log-sheet{overflow:auto}.daily-log-sheet svg{width:850px;max-width:none}}@media print{body{background:#fff}.topbar,.intro,.planner-grid,.results-heading,.route-summary,.results-grid,.itinerary-card,.daily-logs-heading{display:none!important}.app-shell{max-width:none;padding:0}.results{margin:0}.daily-logs{margin:0}.daily-log-sheet{break-after:page;border:0;border-radius:0;box-shadow:none}.daily-log-sheet:last-child{break-after:auto}.daily-log-sheet svg{width:100%;height:auto}.log-sheets{display:block}}
+/* DailyLogs.css — Authentic FMCSA Driver Daily Log Sheet & Print Stylesheet */
+
+.daily-logs {
+  margin-top: 32px;
+}
+
+.daily-logs-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.daily-logs-heading h3 {
+  margin: 6px 0 0;
+  color: var(--navy, #0f172a);
+  font: 800 28px/1.1 var(--display, system-ui, sans-serif);
+  letter-spacing: -0.03em;
+}
+
+.daily-logs-heading p:not(.section-kicker) {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: var(--muted, #64748b);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.daily-logs-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.day-tabs {
+  display: inline-flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: 8px;
+  gap: 2px;
+}
+
+.day-tab {
+  border: 0;
+  background: transparent;
+  color: #475569;
+  font: 700 12px/1 var(--display, system-ui, sans-serif);
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.day-tab:hover {
+  color: #0f172a;
+}
+
+.day-tab.is-active {
+  background: #ffffff;
+  color: #0284c7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.print-logs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  color: #ffffff;
+  background: #0f172a;
+  font: 700 13px/1 var(--display, system-ui, sans-serif);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.print-logs:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.print-logs:focus-visible {
+  outline: 3px solid rgba(2, 132, 199, 0.4);
+  outline-offset: 2px;
+}
+
+.log-sheets {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.daily-log-sheet {
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.daily-log-sheet:hover {
+  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.12);
+}
+
+.fmcsa-log-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  user-select: none;
+}
+
+/* SVG Elements Styling */
+.log-paper {
+  fill: #ffffff;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.log-doc-title {
+  fill: #0f172a;
+  font-family: var(--display, system-ui, sans-serif);
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.log-doc-subtitle {
+  fill: #475569;
+  font-family: var(--display, system-ui, sans-serif);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.log-doc-subtext {
+  fill: #64748b;
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 500;
+}
+
+.log-field-box {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-bar-box {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-field-label {
+  fill: #64748b;
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.log-field-hero {
+  fill: #0f172a;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.log-field-value {
+  fill: #0f172a;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.log-grid-body {
+  fill: #ffffff;
+  stroke: #475569;
+  stroke-width: 1.5;
+}
+
+.log-row-header-box {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-row-header-box.alt {
+  fill: #f1f5f9;
+}
+
+.log-row-label {
+  fill: #1e293b;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.log-grid-line {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-hour {
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.log-hour-major {
+  stroke: #64748b;
+  stroke-width: 1.5;
+}
+
+.log-tick-quarter {
+  stroke: #f1f5f9;
+  stroke-width: 0.75;
+}
+
+.log-tick-half {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-hour-number {
+  fill: #64748b;
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.log-hour-number.is-major {
+  fill: #0f172a;
+  font-weight: 800;
+}
+
+.log-totals-column {
+  fill: #f8fafc;
+  stroke: #475569;
+  stroke-width: 1.5;
+}
+
+.log-totals-head {
+  fill: #0f172a;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.log-row-total-val {
+  fill: #0f172a;
+  font-family: var(--mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.log-grand-total-box {
+  fill: #0f172a;
+  stroke: #0f172a;
+}
+
+.log-grand-total-val {
+  fill: #38bdf8;
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.log-continuous-stepline {
+  filter: drop-shadow(0 1px 2px rgba(2, 132, 199, 0.3));
+}
+
+.log-badge-card {
+  fill: #f8fafc;
+  stroke: #e2e8f0;
+  stroke-width: 1;
+}
+
+.log-badge-label {
+  fill: #334155;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.log-badge-time {
+  fill: #0f172a;
+  font-family: var(--mono, monospace);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.log-badge-sub {
+  fill: #64748b;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.log-remarks-card {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-remark-row {
+  fill: #1e293b;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.log-remark-more {
+  fill: #64748b;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 10px;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.log-recap-card {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.log-recap-item-title {
+  fill: #334155;
+  font-family: var(--display, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.log-recap-item-val {
+  fill: #0f172a;
+  font-family: var(--mono, monospace);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.log-recap-item-val.is-accent {
+  fill: #0284c7;
+}
+
+.log-recap-footer {
+  fill: #64748b;
+  font-family: var(--mono, monospace);
+  font-size: 8.5px;
+}
+
+.log-signature-script {
+  fill: #1e3a8a;
+  font-family: 'Brush Script MT', 'Segoe Script', cursive, serif;
+  font-size: 18px;
+}
+
+.log-rule {
+  stroke: #94a3b8;
+  stroke-width: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .daily-logs-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .daily-logs-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .daily-log-sheet {
+    overflow-x: auto;
+  }
+  .fmcsa-log-svg {
+    min-width: 900px;
+  }
+}
+
+/* Clean 1-Sheet-Per-Page Print Stylesheet */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .topbar,
+  .intro,
+  .planner-grid,
+  .results-heading,
+  .route-summary,
+  .results-grid,
+  .itinerary-card,
+  .daily-logs-heading,
+  .day-tabs,
+  .print-logs {
+    display: none !important;
+  }
+
+  .app-shell {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .results,
+  .daily-logs {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .log-sheets {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .daily-log-sheet {
+    break-after: page;
+    page-break-after: always;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .daily-log-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .fmcsa-log-svg {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}
