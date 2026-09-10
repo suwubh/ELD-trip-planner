@@ -1,13 +1,51 @@
 export type Position = { lat: number; lng: number }
 export type PlannedLocation = { label: string; address: string | null; position: Position }
 export type LocationSuggestion = { id: string; label: string; address: string | null; position: Position }
-export type PlanEvent = { id?: string; kind: string; dutyStatus: 'off_duty' | 'sleeper_berth' | 'driving' | 'on_duty_not_driving'; start: string; end: string; durationMinutes: number; required: boolean; reason: string; location: PlannedLocation | null }
+export type PlanEvent = {
+  id?: string
+  kind: string
+  dutyStatus: 'off_duty' | 'sleeper_berth' | 'driving' | 'on_duty_not_driving'
+  start: string
+  end: string
+  durationMinutes: number
+  distanceMiles?: number
+  required: boolean
+  reason: string
+  location: PlannedLocation | null
+}
 export type RouteResponse = { distanceMiles: number; durationMinutes: number; geometry: Array<[number, number]> }
-export type DailyLog = { date: string; events: PlanEvent[]; totalsMinutes: Record<PlanEvent['dutyStatus'], number>; remarks: string[] }
+export type DailyLogRecap = {
+  onDutyTodayHours: number
+  totalHoursLast7Days: number
+  availableTomorrowHours: number
+  totalHoursLast8Days: number
+}
+export type DailyLog = {
+  date: string
+  dayNumber?: number
+  totalMilesDrivingToday?: number
+  startLocation?: string
+  endLocation?: string
+  events: PlanEvent[]
+  totalsMinutes: Record<PlanEvent['dutyStatus'], number>
+  remarks: string[]
+  recap?: DailyLogRecap
+}
+export type ComplianceInfo = {
+  isCompliant: boolean
+  drivingHoursUsed?: number
+  drivingHoursRemaining?: number
+  dailyWindowHoursRemaining?: number
+  cycleHoursUsed?: number
+  cycleHoursRemaining: number
+  summary: string
+  nextRequiredStop?: PlanEvent | null
+  restartPerformed?: boolean
+}
 export type TripPlanResponse = {
   trip?: { startTime: string; locations: { current: PlannedLocation; pickup: PlannedLocation; dropoff: PlannedLocation } }
   route: RouteResponse
-  compliance: { isCompliant: boolean; drivingHoursRemaining?: number; dailyWindowHoursRemaining?: number; cycleHoursRemaining: number; summary: string; nextRequiredStop?: PlanEvent | null }
+  compliance: ComplianceInfo
   events: PlanEvent[]
   itinerary?: PlanEvent[]
   dailyLogs?: DailyLog[]
