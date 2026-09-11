@@ -160,11 +160,29 @@ export function PlanResults({ plan }: PlanResultsProps) {
       <section className="itinerary-card" aria-labelledby="itinerary-title">
         <div className="panel-heading">
           <div>
-            <p className="section-kicker">Timeline</p>
-            <h3 id="itinerary-title">Driver itinerary</h3>
+            <p className="section-kicker">Route Instructions &amp; Timeline</p>
+            <h3 id="itinerary-title">Route instructions and stops itinerary</h3>
           </div>
           <span>{itinerary.length} scheduled events</span>
         </div>
+
+        {route.legs && route.legs.length >= 2 && (
+          <div className="route-legs-guide" style={{ margin: '0 0 16px', padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ fontWeight: 600, color: '#334155' }}>
+              📍 <strong>Leg 1:</strong> {trip.locations.current.label} → {trip.locations.pickup.label} ({route.legs[0].distanceMiles} mi · {formatDuration(route.legs[0].durationMinutes)})
+            </div>
+            <div style={{ color: '#64748b', paddingLeft: '20px' }}>
+              ↳ Stop 1: Pickup Service (1 hour on-duty loading at {trip.locations.pickup.label})
+            </div>
+            <div style={{ fontWeight: 600, color: '#334155' }}>
+              🏁 <strong>Leg 2:</strong> {trip.locations.pickup.label} → {trip.locations.dropoff.label} ({route.legs[1].distanceMiles} mi · {formatDuration(route.legs[1].durationMinutes)})
+            </div>
+            <div style={{ color: '#64748b', paddingLeft: '20px' }}>
+              ↳ Stop 2: Delivery Service (1 hour on-duty unloading at {trip.locations.dropoff.label})
+            </div>
+          </div>
+        )}
+
         <ol className="itinerary">
           {itinerary.map((event, index) => (
             <li

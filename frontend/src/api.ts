@@ -13,7 +13,19 @@ export type PlanEvent = {
   reason: string
   location: PlannedLocation | null
 }
-export type RouteResponse = { distanceMiles: number; durationMinutes: number; geometry: Array<[number, number]> }
+export type RouteLegResponse = {
+  origin: PlannedLocation
+  destination: PlannedLocation
+  distanceMiles: number
+  durationMinutes: number
+  geometry: Array<[number, number]>
+}
+export type RouteResponse = {
+  distanceMiles: number
+  durationMinutes: number
+  geometry: Array<[number, number]>
+  legs?: RouteLegResponse[]
+}
 export type DailyLogRecap = {
   onDutyTodayHours: number
   totalHoursLast7Days: number
