@@ -55,7 +55,7 @@ class LocationSuggestion:
 
 
 class TomTomClient:
-    def __init__(self, api_key: str | None = None, timeout_seconds: float = 8.0):
+    def __init__(self, api_key: str | None = None, timeout_seconds: float = 20.0):
         self.api_key = api_key if api_key is not None else os.getenv("TOMTOM_API_KEY", "")
         self.timeout_seconds = timeout_seconds
 
@@ -142,16 +142,28 @@ class TomTomClient:
         return self.api_key
 
     def _request(self, url: str) -> dict[str, Any]:
-        request = Request(url, headers={"Accept": "application/json"})
-        try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:  # noqa: S310 - fixed HTTPS host
-                payload = json.loads(response.read().decode("utf-8"))
-        except (TimeoutError, socket.timeout) as exc:
-            raise TomTomTimeoutError("TomTom request timed out") from exc
-        except HTTPError as exc:
-            raise TomTomResponseError("TomTom returned an HTTP error") from exc
-        except (URLError, OSError, json.JSONDecodeError, http.client.HTTPException) as exc:
-            raise TomTomResponseError("TomTom request failed") from exc
+        headers = {
+            "Accept": "application/json",
+            "User-Agent": "LinehaulLedger/1.0",
+        }
+        for attempt in range(2):
+            request = Request(url, headers=headers)
+            try:
+                with urlopen(request, timeout=self.timeout_seconds) as response:  # noqa: S310 - fixed HTTPS host
+                    payload = json.loads(response.read().decode("utf-8"))
+                break
+            except (http.client.IncompleteRead, socket.timeout) as exc:
+                if attempt == 0:
+                    continue
+                if isinstance(exc, socket.timeout):
+                    raise TomTomTimeoutError("TomTom request timed out") from exc
+                raise TomTomResponseError("TomTom request failed") from exc
+            except (TimeoutError,) as exc:
+                raise TomTomTimeoutError("TomTom request timed out") from exc
+            except HTTPError as exc:
+                raise TomTomResponseError("TomTom returned an HTTP error") from exc
+            except (URLError, OSError, json.JSONDecodeError, http.client.HTTPException) as exc:
+                raise TomTomResponseError("TomTom request failed") from exc
         if not isinstance(payload, dict):
             raise TomTomResponseError("TomTom returned an invalid payload")
         return payload
