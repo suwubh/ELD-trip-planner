@@ -1,7 +1,7 @@
-/* DailyLogs.css — Authentic FMCSA Driver Daily Log Sheet & Print Stylesheet */
+/* DailyLogs.css — Authentic FMCSA Driver Daily Log Sheet & Landscape Print Engine */
 
 .daily-logs {
-  margin-top: 32px;
+  margin-top: 36px;
 }
 
 .daily-logs-heading {
@@ -13,15 +13,15 @@
 }
 
 .daily-logs-heading h3 {
-  margin: 6px 0 0;
-  color: var(--navy, #0f172a);
-  font: 800 28px/1.1 var(--display, system-ui, sans-serif);
+  margin: 4px 0 0;
+  color: var(--navy, #0b1329);
+  font: 800 26px/1.1 var(--display, system-ui, sans-serif);
   letter-spacing: -0.03em;
 }
 
 .daily-logs-heading p:not(.section-kicker) {
-  max-width: 720px;
-  margin: 8px 0 0;
+  max-width: 600px;
+  margin: 6px 0 0;
   color: var(--muted, #64748b);
   font-size: 14px;
   line-height: 1.5;
@@ -47,10 +47,10 @@
   background: transparent;
   color: #475569;
   font: 700 12px/1 var(--display, system-ui, sans-serif);
-  padding: 8px 12px;
+  padding: 7px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
 .day-tab:hover {
@@ -60,7 +60,8 @@
 .day-tab.is-active {
   background: #ffffff;
   color: #0284c7;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+  font-weight: 800;
 }
 
 .print-logs {
@@ -69,13 +70,13 @@
   gap: 8px;
   border: 0;
   border-radius: 8px;
-  padding: 10px 18px;
+  padding: 9px 16px;
   color: #ffffff;
   background: #0f172a;
   font: 700 13px/1 var(--display, system-ui, sans-serif);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: all 0.15s ease;
 }
 
 .print-logs:hover {
@@ -95,35 +96,35 @@
 }
 
 .daily-log-sheet {
-  overflow: hidden;
+  position: relative;
+  width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 28px -4px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
 }
 
-.daily-log-sheet:hover {
-  box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.12);
-}
-
+/* Fluid responsive SVG scaling */
 .fmcsa-log-svg {
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: auto;
   background: #ffffff;
   user-select: none;
 }
 
-/* SVG Elements Styling */
+/* Official FMCSA Log Elements */
 .log-paper {
   fill: #ffffff;
-  stroke: #94a3b8;
+  stroke: #64748b;
   stroke-width: 1.5;
 }
 
 .log-doc-title {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--display, system-ui, sans-serif);
   font-weight: 900;
   font-size: 20px;
@@ -135,14 +136,14 @@
   font-family: var(--display, system-ui, sans-serif);
   font-weight: 700;
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .log-doc-subtext {
   fill: #64748b;
   font-family: var(--mono, monospace);
   font-size: 9px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .log-field-box {
@@ -158,7 +159,7 @@
 }
 
 .log-field-label {
-  fill: #64748b;
+  fill: #475569;
   font-family: var(--mono, monospace);
   font-size: 9px;
   font-weight: 700;
@@ -166,14 +167,14 @@
 }
 
 .log-field-hero {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--display, system-ui, sans-serif);
   font-size: 16px;
   font-weight: 800;
 }
 
 .log-field-value {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--display, system-ui, sans-serif);
   font-size: 13px;
   font-weight: 700;
@@ -181,7 +182,7 @@
 
 .log-grid-body {
   fill: #ffffff;
-  stroke: #475569;
+  stroke: #1e293b;
   stroke-width: 1.5;
 }
 
@@ -196,7 +197,7 @@
 }
 
 .log-row-label {
-  fill: #1e293b;
+  fill: #0f172a;
   font-family: var(--display, system-ui, sans-serif);
   font-size: 10px;
   font-weight: 800;
@@ -229,40 +230,40 @@
 }
 
 .log-hour-number {
-  fill: #64748b;
+  fill: #475569;
   font-family: var(--mono, monospace);
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 600;
 }
 
 .log-hour-number.is-major {
-  fill: #0f172a;
+  fill: #0b1329;
   font-weight: 800;
 }
 
 .log-totals-column {
   fill: #f8fafc;
-  stroke: #475569;
+  stroke: #1e293b;
   stroke-width: 1.5;
 }
 
 .log-totals-head {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--display, system-ui, sans-serif);
   font-size: 10px;
   font-weight: 800;
 }
 
 .log-row-total-val {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--mono, monospace);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .log-grand-total-box {
-  fill: #0f172a;
-  stroke: #0f172a;
+  fill: #0b1329;
+  stroke: #0b1329;
 }
 
 .log-grand-total-val {
@@ -273,7 +274,13 @@
 }
 
 .log-continuous-stepline {
-  filter: drop-shadow(0 1px 2px rgba(2, 132, 199, 0.3));
+  filter: drop-shadow(0 1px 2px rgba(2, 132, 199, 0.35));
+}
+
+.log-leader-line {
+  stroke: #94a3b8;
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
 }
 
 .log-badge-card {
@@ -290,7 +297,7 @@
 }
 
 .log-badge-time {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--mono, monospace);
   font-size: 13px;
   font-weight: 800;
@@ -337,7 +344,7 @@
 }
 
 .log-recap-item-val {
-  fill: #0f172a;
+  fill: #0b1329;
   font-family: var(--mono, monospace);
   font-size: 12px;
   font-weight: 800;
@@ -364,7 +371,6 @@
   stroke-width: 1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .daily-logs-heading {
     flex-direction: column;
@@ -374,29 +380,42 @@
     width: 100%;
     justify-content: space-between;
   }
-  .daily-log-sheet {
-    overflow-x: auto;
-  }
-  .fmcsa-log-svg {
-    min-width: 900px;
-  }
 }
 
-/* Clean 1-Sheet-Per-Page Print Stylesheet */
+/* LANDSCAPE PRINT ENGINE */
+@page {
+  size: letter landscape;
+  margin: 8mm;
+}
+
 @media print {
+  @page {
+    size: letter landscape;
+    margin: 8mm;
+  }
+
+  html,
   body {
     background: #ffffff !important;
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .topbar,
   .intro,
+  .demo-presets-banner,
   .planner-grid,
   .results-heading,
   .route-summary,
   .results-grid,
+  .map-card,
+  .compliance-card,
   .itinerary-card,
   .daily-logs-heading,
   .day-tabs,
@@ -404,43 +423,55 @@
     display: none !important;
   }
 
-  .app-shell {
-    max-width: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
+  .app-shell,
   .results,
   .daily-logs {
+    max-width: 100% !important;
+    width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: visible !important;
   }
 
   .log-sheets {
     display: block !important;
     gap: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .daily-log-sheet {
-    break-after: page;
-    page-break-after: always;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
+    display: block !important;
+    box-sizing: border-box !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     height: auto !important;
+    overflow: visible !important;
+    border: 1.5px solid #0f172a !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    margin: 0 0 12mm 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: always !important;
+    break-after: page !important;
   }
 
   .daily-log-sheet:last-child {
-    break-after: auto;
-    page-break-after: auto;
+    margin-bottom: 0 !important;
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .fmcsa-log-svg {
+    display: block !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
     height: auto !important;
+    overflow: visible !important;
   }
 }

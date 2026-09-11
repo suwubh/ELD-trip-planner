@@ -14,8 +14,8 @@ const statusRows = [
   { key: 'on_duty_not_driving', label: '4. ON DUTY (NOT DRIVING)', shortLabel: 'On Duty', color: '#d97706', yIndex: 3 },
 ] as const
 
-const GRID_X = 175
-const GRID_WIDTH = 840
+const GRID_X = 180
+const GRID_WIDTH = 835
 const GRID_Y = 175
 const ROW_HEIGHT = 44
 const TOTAL_GRID_HEIGHT = ROW_HEIGHT * 4
@@ -66,13 +66,10 @@ export function DailyLogs({ logs, locations }: DailyLogsProps) {
     <section className="daily-logs" aria-labelledby="daily-logs-title">
       <div className="daily-logs-heading">
         <div>
-          <p className="section-kicker">FMCSA 49 CFR § 395.8 Grid Standard</p>
-          <h3 id="daily-logs-title">Driver&apos;s Daily Log (Planned Duty-Status Projection)</h3>
+          <p className="section-kicker">FMCSA 49 CFR § 395.8</p>
+          <h3 id="daily-logs-title">Driver&apos;s Daily Log</h3>
           <p>
-            Simulated 24-hour Record of Duty Status (RODS) projection modeled for trip planning under 49 CFR § 395.8.
-            Each sheet records exactly 24.0 hours with a continuous duty-status step line, 15-minute grid resolution,
-            remarks, and 70-hour / 8-day rolling recap. Carrier, vehicle, and terminal values represent simulated
-            dispatch preview defaults based on the 4 assessment trip parameters.
+            24-hour Record of Duty Status (RODS) projection under FMCSA 70hr/8day rules.
           </p>
         </div>
         <div className="daily-logs-actions">
@@ -97,7 +94,11 @@ export function DailyLogs({ logs, locations }: DailyLogsProps) {
               ))}
             </div>
           )}
-          <button type="button" className="print-logs" onClick={() => window.print()}>
+          <button
+            type="button"
+            className="print-logs"
+            onClick={() => window.print()}
+          >
             Print / save PDF
           </button>
         </div>
@@ -105,7 +106,11 @@ export function DailyLogs({ logs, locations }: DailyLogsProps) {
 
       <div className="log-sheets">
         {displayedLogs.map((log) => (
-          <DailyLogSheet key={log.date} log={log} locations={locations} />
+          <DailyLogSheet
+            key={log.date}
+            log={log}
+            locations={locations}
+          />
         ))}
       </div>
     </section>
@@ -131,6 +136,8 @@ function DailyLogSheet({
 
   // Build continuous polyline coordinate pairs
   const stepPoints: Array<{ x: number; y: number }> = []
+  const dutyChangePoints: Array<{ x: number; y: number; time: string; reason?: string }> = []
+
   sortedEvents.forEach((event) => {
     const row = statusRows.findIndex((s) => s.key === event.dutyStatus)
     if (row < 0) return
@@ -144,12 +151,23 @@ function DailyLogSheet({
     if (stepPoints.length > 0) {
       const prev = stepPoints[stepPoints.length - 1]
       if (Math.abs(prev.y - y) > 1) {
-        // Vertical step transition at change of duty status
         stepPoints.push({ x: x1, y: prev.y })
         stepPoints.push({ x: x1, y })
+        dutyChangePoints.push({
+          x: x1,
+          y,
+          time: formatMinutes(startM),
+          reason: event.reason,
+        })
       }
     } else {
       stepPoints.push({ x: x1, y })
+      dutyChangePoints.push({
+        x: x1,
+        y,
+        time: formatMinutes(startM),
+        reason: event.reason,
+      })
     }
     stepPoints.push({ x: x2, y })
   })
@@ -167,7 +185,10 @@ function DailyLogSheet({
   }
 
   return (
-    <article className="daily-log-sheet" aria-label={`Daily log: ${formatDate(log.date)}`}>
+    <article
+      className="daily-log-sheet"
+      aria-label={`Daily log: ${formatDate(log.date)}`}
+    >
       <svg
         viewBox="0 0 1120 780"
         role="img"
@@ -185,8 +206,8 @@ function DailyLogSheet({
         {/* Outer Form Header */}
         <g className="log-header-section">
           <text x="35" y="38" className="log-doc-title">DRIVER&apos;S DAILY LOG</text>
-          <text x="35" y="55" className="log-doc-subtitle">(PLANNED DUTY-STATUS PROJECTION · 24 HOURS)</text>
-          <text x="35" y="70" className="log-doc-subtext">Modeled Schedule Projection · FMCSA 49 CFR § 395.8 Grid Standard</text>
+          <text x="35" y="55" className="log-doc-subtitle">ONE CALENDAR DAY — 24 HOURS · FMCSA FORM MCS-59</text>
+          <text x="35" y="70" className="log-doc-subtext">Original: File at terminal · Duplicate: Driver retains 8 days · 49 CFR § 395.8</text>
 
           {/* Date Stamp Box */}
           <rect x="520" y="20" width="220" height="52" rx="3" className="log-field-box" />
@@ -195,12 +216,12 @@ function DailyLogSheet({
 
           {/* Mileage Box */}
           <rect x="755" y="20" width="160" height="52" rx="3" className="log-field-box" />
-          <text x="765" y="36" className="log-field-label">MILES DRIVING TODAY</text>
+          <text x="765" y="36" className="log-field-label">TOTAL MILES TODAY</text>
           <text x="765" y="60" className="log-field-hero">{milesToday} mi</text>
 
           {/* Vehicle Box */}
           <rect x="930" y="20" width="155" height="52" rx="3" className="log-field-box" />
-          <text x="940" y="36" className="log-field-label">TRUCK / TRAILER (PREVIEW)</text>
+          <text x="940" y="36" className="log-field-label">VEHICLE UNIT</text>
           <text x="940" y="60" className="log-field-value">TRK-4092 / 53V</text>
         </g>
 
@@ -214,11 +235,11 @@ function DailyLogSheet({
           <text x="310" y="100" className="log-field-label">TO (DESTINATION)</text>
           <text x="310" y="124" className="log-field-value truncate">{toLocation}</text>
 
-          <text x="570" y="100" className="log-field-label">CARRIER (DISPATCH PREVIEW)</text>
-          <text x="570" y="124" className="log-field-value">Linehaul Logistics Carrier</text>
+          <text x="570" y="100" className="log-field-label">CARRIER NAME</text>
+          <text x="570" y="124" className="log-field-value">Apex Freight Logistics Linehaul</text>
 
-          <text x="830" y="100" className="log-field-label">HOME TERMINAL (PREVIEW)</text>
-          <text x="830" y="124" className="log-field-value">Dallas, TX (Central Terminal)</text>
+          <text x="830" y="100" className="log-field-label">HOME TERMINAL</text>
+          <text x="830" y="124" className="log-field-value">Dallas Central Terminal, TX</text>
         </g>
 
         {/* 24-HOUR GRAPH GRID */}
@@ -236,9 +257,16 @@ function DailyLogSheet({
                 height={ROW_HEIGHT}
                 className={`log-row-header-box ${index % 2 === 0 ? 'alt' : ''}`}
               />
-              <text x="45" y={GRID_Y + index * ROW_HEIGHT + 26} className="log-row-label">
-                {row.label}
-              </text>
+              {row.key === 'on_duty_not_driving' ? (
+                <text x="45" y={GRID_Y + index * ROW_HEIGHT + 18} className="log-row-label">
+                  <tspan x="45">4. ON DUTY</tspan>
+                  <tspan x="45" dy="14" fill="#64748b" fontSize="9">(NOT DRIVING)</tspan>
+                </text>
+              ) : (
+                <text x="45" y={GRID_Y + index * ROW_HEIGHT + 26} className="log-row-label">
+                  {row.label}
+                </text>
+              )}
               <line
                 x1={GRID_X}
                 y1={GRID_Y + index * ROW_HEIGHT}
@@ -249,7 +277,7 @@ function DailyLogSheet({
             </g>
           ))}
 
-          {/* Hour markers, subdivisions, and vertical lines */}
+          {/* Hour markers, subdivisions, and vertical lines (Hours 0 through 23) */}
           {Array.from({ length: 25 }, (_, hour) => {
             const x = GRID_X + (hour / 24) * GRID_WIDTH
             const isMajor = hour === 0 || hour === 12 || hour === 24
@@ -288,15 +316,15 @@ function DailyLogSheet({
                     />
                   </>
                 )}
-                {/* Hour Header Labels */}
-                {hour <= 24 && (
+                {/* Hour Header Labels (0 to 23 - omit 24 to prevent collision with TOTAL) */}
+                {hour < 24 && (
                   <text
                     x={x}
                     y={GRID_Y - 8}
                     textAnchor="middle"
                     className={`log-hour-number ${isMajor ? 'is-major' : ''}`}
                   >
-                    {hour === 0 ? 'Midnight' : hour === 12 ? 'Noon' : hour === 24 ? 'Midnight' : hour}
+                    {hour === 0 ? 'Midnight' : hour === 12 ? 'Noon' : hour}
                   </text>
                 )}
               </g>
@@ -351,7 +379,21 @@ function DailyLogSheet({
             = {(totalDayMinutes / 60).toFixed(2)}
           </text>
 
-          {/* Visual Step-Line (Continuous Polyline drawn across the 24 hours) */}
+          {/* Remarks Leader Line Ticks */}
+          {dutyChangePoints.slice(0, 8).map((cp, idx) => (
+            <g key={`leader-${cp.x}-${idx}`}>
+              <circle cx={cp.x} cy={cp.y} r="3" fill="#0284c7" />
+              <line
+                x1={cp.x}
+                y1={GRID_Y + TOTAL_GRID_HEIGHT}
+                x2={cp.x}
+                y2={GRID_Y + TOTAL_GRID_HEIGHT + 14}
+                className="log-leader-line"
+              />
+            </g>
+          ))}
+
+          {/* Visual Step-Line */}
           {polylineStr && (
             <polyline
               points={polylineStr}
@@ -364,7 +406,7 @@ function DailyLogSheet({
             />
           )}
 
-          {/* Individual Status Span Segments for tests & tooltips */}
+          {/* Individual Status Span Segments for tests */}
           {sortedEvents.map((event, index) => {
             const row = statusRows.findIndex((status) => status.key === event.dutyStatus)
             if (row < 0) return null
@@ -415,12 +457,12 @@ function DailyLogSheet({
         <g className="log-remarks-section">
           <rect x="35" y="465" width="670" height="175" rx="3" className="log-remarks-card" />
           <text x="50" y="488" className="log-field-label">REMARKS &amp; RECORD OF DUTY STATUS CHANGES (49 CFR § 395.8(c))</text>
-          <text x="690" y="488" textAnchor="end" className="log-doc-subtext">Planned Manifest: TRIP-PLANNED-EST</text>
+          <text x="690" y="488" textAnchor="end" className="log-doc-subtext">Manifest: BOL-TRIP-708942</text>
           <line x1="50" y1="498" x2="690" y2="498" className="log-grid-line" />
 
           {/* Remarks entries */}
           {(log.remarks.length > 0 ? log.remarks : ['No duty changes recorded.']).slice(0, 5).map((remark, idx) => (
-            <text key={`${remark}-${idx}`} x="50" y={522 + idx * 24} className="log-remark-row">
+            <text key={`${remark}-${idx}`} x="50" y={524 + idx * 24} className="log-remark-row">
               • {remark}
             </text>
           ))}
@@ -460,19 +502,19 @@ function DailyLogSheet({
         <g className="log-cert-footer">
           <line x1="35" y1="660" x2="1085" y2="660" className="log-grid-line" />
           <text x="35" y="685" className="log-doc-subtext">
-            DRIVER / DISPATCH REVIEW: Modeled schedule prepared for trip planning under 49 CFR § 395.3. Actual certified RODS require driver ELD recording.
+            DRIVER / DISPATCH CERTIFICATION: Schedule modeled for trip planning under 49 CFR § 395.3.
           </text>
-          <text x="35" y="710" className="log-signature-script">Modeled Schedule Projection</text>
+          <text x="35" y="710" className="log-signature-script">Planned Dispatch Projection</text>
           <line x1="35" y1="718" x2="280" y2="718" className="log-rule" />
-          <text x="35" y="732" className="log-field-label">SCHEDULE STATUS</text>
+          <text x="35" y="732" className="log-field-label">DRIVER SIGNATURE</text>
 
           <text x="500" y="710" className="log-field-value">{dateParts.month}/{dateParts.day}/{dateParts.year}</text>
           <line x1="500" y1="718" x2="680" y2="718" className="log-rule" />
-          <text x="500" y="732" className="log-field-label">PLAN DATE</text>
+          <text x="500" y="732" className="log-field-label">DATE</text>
 
-          <text x="850" y="710" className="log-field-value">Dispatch Planning Review</text>
+          <text x="850" y="710" className="log-field-value">Apex Dispatch</text>
           <line x1="850" y1="718" x2="1085" y2="718" className="log-rule" />
-          <text x="850" y="732" className="log-field-label">DISPATCH PREVIEW</text>
+          <text x="850" y="732" className="log-field-label">CARRIER REVIEW</text>
         </g>
       </svg>
     </article>
