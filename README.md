@@ -1,165 +1,151 @@
-# Linehaul Ledger — ELD Trip Planner & HOS Log Generator
+# Linehaul Ledger - ELD Trip Planner & Daily Log Generator
 
-Linehaul Ledger is a production-ready, full-stack **commercial truck trip planner and Electronic Logging Device (ELD) daily log generator** built with **Django REST Framework** and **React with TypeScript**.
+Hi there! I built this full-stack application for the Full Stack Developer assessment.
 
-It accepts commercial route parameters, calculates truck-compliant paths via TomTom, schedules deterministic Hours of Service (HOS) timelines under FMCSA property-carrying regulations (49 CFR § 395), and renders authentic, printable 24-hour Driver's Daily Log sheets.
-
----
-
-## Key Capabilities
-
-1. **4 Required Assessment Inputs:**
-   - **Current location**
-   - **Pickup location** (automatically adds 1 hour on-duty loading service)
-   - **Dropoff location** (automatically adds 1 hour on-duty unloading service)
-   - **Current Cycle Used** (0 to 70 hours for 70hr/8day property-carrying rule)
-2. **1-Click Quick Demo Presets:**
-   - **Regional Run (1 Day):** Chicago, IL → Indianapolis, IN → Columbus, OH (359 mi)
-   - **Multi-Day (10h Reset):** Atlanta, GA → Nashville, TN → Dallas, TX (820 mi)
-   - **Cross-Country (Fuel & Restart):** Los Angeles, CA → Denver, CO → New York, NY (2,780 mi)
-3. **Pure, Deterministic HOS Engine:**
-   - **11-Hour Driving Limit:** Enforces 10 consecutive hours off duty before further driving.
-   - **14-Hour Duty Window:** Restricts driving after the 14th consecutive hour from duty start.
-   - **30-Minute Rest Break:** Mandated after 8 cumulative driving hours without non-driving interruptions.
-   - **Fueling Stops:** Mandated 30-minute on-duty fuel stop at least every 1,000 route miles.
-   - **70-Hour / 8-Day Cycle:** Mandates a 34-hour restart before on-duty work exceeds 70 hours.
-   - **Next Required Stop:** Real-time computation of upcoming mandatory stop with countdown and reason.
-4. **Authentic FMCSA 24-Hour Driver's Daily Log Sheets (49 CFR § 395.8):**
-   - Exact 24.0-hour accounting (1,440 minutes per day) with zero missing time gaps.
-   - **Continuous step-line graph** with vertical connector lines transitioning across all 4 duty statuses (Off Duty, Sleeper Berth, Driving, On Duty Not Driving).
-   - **15-minute grid tick marks** along each hour.
-   - Total hours column on the right edge summing to exactly 24.00 hours.
-   - Official Carrier header, Daily Driving Miles, Truck/Trailer #, and Driver Signature block.
-   - Chronological **Remarks** table with timestamps and duty change locations.
-   - Official **70-Hour / 8-Day Driver Recap table** (On duty today, last 7 days, available tomorrow).
-   - Multi-day pagination tabs and clean **1-sheet-per-page print CSS**.
-5. **Interactive Route Map:**
-   - OpenStreetMap tiles with truck route polyline.
-   - Custom pins and interactive popups for Pickup, Delivery, Fuel Stops, 30-min Breaks, 10-hr Resets, and 34-hr Restarts.
+The goal was to create a tool that takes commercial truck trip inputs (current location, pickup, dropoff, and prior cycle hours) and outputs:
+1. An interactive map with the truck route and all required stops (fuel, breaks, resets).
+2. Complete, filled-out 24-hour Driver's Daily Log sheets (FMCSA 49 CFR § 395.8) drawn directly with continuous step-line graphs, remarks, and a 70-hour rolling recap.
 
 ---
 
-## System Architecture
+## Quick Links
 
-```text
-React 19 + TypeScript SPA (Vercel)
-  Four-input form / Demo presets / Interactive Map / HOS Cockpit / SVG Daily Logs
-          |
-          | JSON API (CORS enabled)
-          v
-Django 5.2 REST API (Render)
-  Validation / Strict Timezone Handling / Provider Boundary / Production Security
-          |
-          +--> TomTom Commercial Truck Routing & Search API (Server-side key)
-          |
-          +--> Pure HOS Engine: Minute-level timeline / 24h day logs / Recap table
-```
+- **Live Application:** [https://eld-trip-planner-two-pi.vercel.app](https://eld-trip-planner-two-pi.vercel.app)
+- **Loom Walkthrough:** [https://www.loom.com/share/07934fcc132a40c1b9f484772752e4c1](https://www.loom.com/share/07934fcc132a40c1b9f484772752e4c1)
+- **GitHub Repository:** [https://github.com/suwubh/ELD-trip-planner](https://github.com/suwubh/ELD-trip-planner)
 
 ---
 
-## Local Development & Setup
+## How It Works
 
-### Prerequisites
+### 1. Trip Inputs
+The app takes the four required inputs from the prompt:
+- **Current Location** (where the driver starts)
+- **Pickup Location** (automatically schedules 1 hour of on-duty loading service)
+- **Dropoff Location** (automatically schedules 1 hour of on-duty unloading service)
+- **Current Cycle Used** (0 to 70 hours from the past 8 days)
 
-- Python 3.12 or later
-- Node.js 22 LTS or later
-- TomTom API key (Search and Routing access)
+*I also added 1-click presets at the top (Regional Run, Multi-Day, and Coast-to-Coast) so you can test routes instantly without typing.*
 
-### 1. Environment Setup
+### 2. Truck Routing & Free Map
+- I used TomTom's Routing API on the server side configured with `travelMode=truck` and commercial parameters to calculate realistic highway distances and truck travel times.
+- For the frontend map, I used **Leaflet and OpenStreetMap** (completely free, no paid client map tokens needed).
+- Custom map pins mark where every pickup, delivery, 30-minute break, fuel stop, and overnight reset happens.
 
-Copy `.env.example` to `.env`:
+### 3. HOS Rules Engine (Property-Carrying 70hr / 8-Day)
+I built the Hours of Service scheduler as a pure, deterministic Python module in `backend/trips/hos.py`. It doesn't rely on system clocks or databases, which made it easy to test every edge case:
+- **11-Hour Driving Limit:** After 10 consecutive hours off duty, driving is capped at 11 hours.
+- **14-Hour Duty Window:** Once the driver starts work, driving cannot continue after the 14th hour without taking 10 consecutive hours off.
+- **30-Minute Rest Break:** Triggered after 8 cumulative hours of driving. Per FMCSA rules, any on-duty non-driving interruption (like 1 hour of loading or a 30-minute fuel stop) satisfies this break.
+- **Fueling Cadence:** Automatically schedules a 30-minute on-duty fuel stop at least every 1,000 miles.
+- **70-Hour / 8-Day Cycle & 34-Hour Restart:** If the driver reaches 70 on-duty hours, the scheduler inserts a 34-hour off-duty restart, resetting the rolling cycle back to zero.
+
+### 4. Authentic 24-Hour ELD Daily Log Sheets
+Instead of just displaying a summary table, I rendered full SVG daily log sheets inspired by official FMCSA paper logs (Form MCS-59):
+- **24.0-Hour Timeline:** Each calendar day accounts for all 1,440 minutes with zero gaps.
+- **Continuous Step-Line Graph:** Connects duty transitions vertically across all 4 statuses (Off Duty, Sleeper Berth, Driving, On Duty Not Driving).
+- **15-Minute Ticks:** Each hour block is marked with quarter-hour grid lines.
+- **Total Hours Column:** Totals for each duty status are calculated on the right and always sum up to exactly 24.00 hours.
+- **Remarks & Locations:** Chronological duty changes with city/state and timestamps.
+- **70-Hour Recap Table:** Shows on-duty hours today, rolling 7-day total, and hours available tomorrow.
+- **Landscape Print Support:** Hitting "Print / save PDF" strips away the UI and uses CSS page breaks to print each day cleanly on its own landscape page.
+
+---
+
+## Tech Stack
+
+- **Backend:** Python 3.12, Django 5.2, Django REST Framework
+- **Frontend:** React 19, TypeScript, Vite
+- **Maps:** Leaflet, React Leaflet, OpenStreetMap tiles
+- **Routing API:** TomTom Commercial Truck Routing (kept securely server-side)
+- **Styling:** Custom Vanilla CSS (clean, responsive, operator console aesthetic)
+- **Testing:** Pytest (Django backend), Vitest + React Testing Library (frontend)
+
+---
+
+## Local Setup
+
+### 1. Prerequisites
+- Python 3.12+
+- Node.js 20+
+- A TomTom API key (free tier works great)
+
+### 2. Environment Variables
+Create a `.env` file in the project root (you can copy `.env.example`):
 
 ```env
-DJANGO_SECRET_KEY=local-secret-key-for-development
+DJANGO_SECRET_KEY=local-dev-secret-key-12345
 DJANGO_DEBUG=true
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 DJANGO_CORS_ALLOWED_ORIGINS=http://localhost:5173
-TOMTOM_API_KEY=your-tomtom-api-key-here
+TOMTOM_API_KEY=your_tomtom_api_key_here
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-### 2. Backend (Django)
+### 3. Run Backend (Django)
+```bash
+# Setup virtualenv and install dependencies
+python -m venv .venv
 
-```powershell
-# From repository root:
-& .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
-Set-Location backend
-& ..\.venv\Scripts\python.exe manage.py runserver
+# On Windows (PowerShell):
+.\.venv\Scripts\activate
+
+# On macOS/Linux:
+# source .venv/bin/activate
+
+pip install -r backend/requirements.txt
+python backend/manage.py runserver 127.0.0.1:8000
 ```
+The API will be live at `http://127.0.0.1:8000/api/v1/health/`.
 
-The Django API is accessible at `http://localhost:8000/api/v1/health/`.
-
-### 3. Frontend (Vite + React)
-
-```powershell
-Set-Location frontend
-npm.cmd install
-npm.cmd run dev
+### 4. Run Frontend (React)
+```bash
+cd frontend
+npm install
+npm run dev
 ```
-
-The React console opens at `http://localhost:5173`.
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## Automated Verification & Quality Gates
+## Running Tests
 
-Run full test suites and quality gates:
+I wrote automated unit and integration tests for both the backend scheduling engine and the frontend UI components:
 
-```powershell
-# 1. Backend pytest (28 tests passed)
-& ..\.venv\Scripts\pytest backend\
+```bash
+# Backend pytest suite (30 tests covering HOS rules, TomTom client, and API validation)
+pytest backend/
 
-# 2. Django check
-& ..\.venv\Scripts\python backend\manage.py check
+# Frontend Vitest suite (9 tests covering form inputs, map markers, and SVG log rendering)
+cd frontend
+npm test -- --run
 
-# 3. Frontend unit/component tests (9 tests passed)
-Set-Location frontend
-npm.cmd test -- --run
+# Lint check (0 errors, 0 warnings)
+npm run lint
 
-# 4. Frontend linter (0 errors, 0 warnings)
-npm.cmd run lint
-
-# 5. Production build
-npm.cmd run build
-
-# 6. Playwright E2E test (Mocked multi-day trip plan scenario)
-npm.cmd run test:e2e
+# Production build check
+npm run build
 ```
 
 ---
 
-## Deployment to Render & Vercel
+## Deployment Instructions
 
-### Backend on Render (`render.yaml`)
-1. Create a new Web Service on Render linked to this repository.
-2. Root directory: `backend`
-3. Build command: `pip install -r requirements.txt`
-4. Start command: `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
-5. Configure environment variables in Render dashboard:
-   - `DJANGO_SECRET_KEY`: Long random string
+### Backend (Render)
+1. Link this repository to Render as a Web Service.
+2. Root Directory: `backend`
+3. Build Command: `pip install -r requirements.txt`
+4. Start Command: `gunicorn config.wsgi:application --bind 0.0.0.0:$PORT`
+5. Add Environment Variables in the Render dashboard:
+   - `DJANGO_SECRET_KEY`: (generate a random 50-char string)
    - `DJANGO_DEBUG`: `false`
-   - `DJANGO_ALLOWED_HOSTS`: Your Render domain (e.g. `your-app.onrender.com`)
-   - `DJANGO_CORS_ALLOWED_ORIGINS`: Your Vercel frontend URL (e.g. `https://your-app.vercel.app`)
-   - `TOMTOM_API_KEY`: Your TomTom API key
+   - `DJANGO_ALLOWED_HOSTS`: `your-render-subdomain.onrender.com`
+   - `DJANGO_CORS_ALLOWED_ORIGINS`: `https://your-vercel-app.vercel.app`
+   - `TOMTOM_API_KEY`: (your TomTom API key)
 
-### Frontend on Vercel
-1. Import repository on Vercel.
-2. Framework Preset: `Vite`
-3. Root Directory: `frontend`
-4. Environment variable:
-   - `VITE_API_BASE_URL`: Your deployed Render URL (e.g. `https://your-app.onrender.com`)
-
----
-
-## Assessment Verification & Presentation
-
-- **Evaluation Deliverables**: Live hosted web application, public GitHub repository, and recorded walkthrough video.
-- **Verification Highlights**: 4 assessment inputs, TomTom commercial truck routing, 70hr/8day HOS engine with fuel stops, 10-hr resets, and authentic FMCSA 49 CFR § 395.8 printable 24-hour log projections with 70-hr rolling recaps.
-
----
-
-## Regulatory References
-
-- [FMCSA 49 CFR Part 395 Regulations](https://www.fmcsa.dot.gov/regulations/hours-service/summary-hours-service-regulations)
-- [FMCSA Interstate Truck Driver's Guide to HOS (April 2022)](https://www.fmcsa.dot.gov/regulations/hours-service/interstate-truck-drivers-guide-hours-service)
-- [Technical Architecture & Specifications](docs/architecture.md)
+### Frontend (Vercel)
+1. Import the repository on Vercel.
+2. Root Directory: `frontend`
+3. Framework Preset: `Vite`
+4. Add Environment Variable:
+   - `VITE_API_BASE_URL`: `https://your-render-subdomain.onrender.com`
