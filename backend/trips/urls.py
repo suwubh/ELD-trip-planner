@@ -1,9 +1,10 @@
-from django.urls import path
+from django.urls import re_path
 
 from trips.views import HealthView, LocationSuggestView, TripPlanView
 
 urlpatterns = [
-    path("health/", HealthView.as_view(), name="health"),
-    path("locations/suggest", LocationSuggestView.as_view(), name="location-suggest"),
-    path("trips/plan", TripPlanView.as_view(), name="trip-plan"),
+    re_path(r"^health/?$", HealthView.as_view(), name="health"),
+    re_path(r"^locations/suggest/?$", LocationSuggestView.as_view(), name="location-suggest"),
+    re_path(r"^trips/plan/?$", TripPlanView.as_view(), name="trip-plan"),
 ]
+

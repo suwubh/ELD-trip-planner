@@ -15,6 +15,11 @@ class LocationInputSerializer(serializers.Serializer):
     position = PositionSerializer(required=False, allow_null=True)
     address = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
+    def to_internal_value(self, data):
+        if isinstance(data, str):
+            data = {"query": data}
+        return super().to_internal_value(data)
+
     def validate_query(self, value: str) -> str:
         if not value:
             raise serializers.ValidationError("A location is required.")
@@ -34,12 +39,32 @@ class TripPlanRequestSerializer(serializers.Serializer):
             "invalid": "Enter a number from 0 through 70.",
         },
     )
-    startTime = serializers.DateTimeField()
+    startTime = serializers.DateTimeField(required=False)
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict):
+            normalized = dict(data)
+            mapping = {
+                "current_location": "currentLocation",
+                "pickup_location": "pickupLocation",
+                "dropoff_location": "dropoffLocation",
+                "current_cycle_used_hours": "currentCycleUsedHours",
+                "start_time": "startTime",
+            }
+            for snake, camel in mapping.items():
+                if snake in normalized and camel not in normalized:
+                    normalized[camel] = normalized[snake]
+            if "startTime" not in normalized or not normalized["startTime"]:
+                from datetime import timezone
+                normalized["startTime"] = datetime.now(timezone.utc).replace(second=0, microsecond=0).isoformat()
+            data = normalized
+        return super().to_internal_value(data)
 
     def validate_startTime(self, value: datetime) -> datetime:
-        raw = self.initial_data.get("startTime")
+        raw = self.initial_data.get("startTime") or self.initial_data.get("start_time")
         if isinstance(raw, str) and not OFFSET_PATTERN.search(raw.strip()):
             raise serializers.ValidationError("startTime must include a timezone offset (e.g. 2026-09-10T08:00:00-05:00).")
         if value.tzinfo is None or value.utcoffset() is None:
             raise serializers.ValidationError("startTime must include a timezone offset (e.g. 2026-09-10T08:00:00-05:00).")
-        return value
+        return value.replace(second=0, microsecond=0)
+

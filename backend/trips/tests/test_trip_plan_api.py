@@ -118,3 +118,27 @@ def test_trip_plan_accepts_pre_resolved_positions(api_client: APIClient, route: 
     assert "dayNumber" in data["dailyLogs"][0]
     assert "recap" in data["dailyLogs"][0]
 
+
+def test_trip_plan_accepts_assessment_spec_inputs_and_trailing_slash(
+    api_client: APIClient, route: Route, monkeypatch
+) -> None:
+    locations = [leg.origin for leg in route.legs] + [route.legs[-1].destination]
+    monkeypatch.setattr("trips.views.TomTomClient.geocode", lambda _self, _query: locations.pop(0))
+    monkeypatch.setattr("trips.views.TomTomClient.truck_route", lambda _self, *_locations: route)
+
+    # Tests 4 inputs only, plain strings, snake_case, and trailing slash /api/v1/trips/plan/
+    payload = {
+        "current_location": "Chicago, IL",
+        "pickup_location": "Indianapolis, IN",
+        "dropoff_location": "Columbus, OH",
+        "current_cycle_used_hours": 25.0,
+    }
+
+    response = api_client.post("/api/v1/trips/plan/", payload, format="json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["route"]["distanceMiles"] == 359.0
+    assert data["compliance"]["isCompliant"] is True
+    assert len(data["dailyLogs"]) >= 1
+
+

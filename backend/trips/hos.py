@@ -41,6 +41,7 @@ class _ScheduleState:
 def plan_trip(route: Route, start_time: datetime, current_cycle_used_hours: float) -> TripPlan:
     """Schedule a current-to-pickup-to-dropoff route without framework or clock access."""
     _validate_inputs(route, start_time, current_cycle_used_hours)
+    start_time = start_time.replace(second=0, microsecond=0)
     state = _ScheduleState(
         current_time=start_time,
         daily_window_started=start_time,
