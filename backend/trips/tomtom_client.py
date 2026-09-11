@@ -1,5 +1,6 @@
 """Small, mockable TomTom search and truck-routing client."""
 
+import http.client
 import json
 import os
 import socket
@@ -149,7 +150,7 @@ class TomTomClient:
             raise TomTomTimeoutError("TomTom request timed out") from exc
         except HTTPError as exc:
             raise TomTomResponseError("TomTom returned an HTTP error") from exc
-        except (URLError, OSError, json.JSONDecodeError) as exc:
+        except (URLError, OSError, json.JSONDecodeError, http.client.HTTPException) as exc:
             raise TomTomResponseError("TomTom request failed") from exc
         if not isinstance(payload, dict):
             raise TomTomResponseError("TomTom returned an invalid payload")

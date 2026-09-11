@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from trips.contracts import Position
-from trips.tomtom_client import LocationSuggestion, TomTomTimeoutError
+from trips.tomtom_client import LocationSuggestion, TomTomClientError, TomTomTimeoutError
 
 
 @pytest.fixture
@@ -37,7 +37,12 @@ def test_trip_plan_rejects_invalid_cycle_hours(api_client: APIClient) -> None:
     ]
 
 
-def test_trip_plan_returns_safe_routing_error_after_valid_input(api_client: APIClient) -> None:
+def test_trip_plan_returns_safe_routing_error_after_valid_input(api_client: APIClient, monkeypatch) -> None:
+    def raise_error(*_args, **_kwargs):
+        raise TomTomClientError("simulated routing failure")
+
+    monkeypatch.setattr("trips.views.TomTomClient.truck_route", raise_error)
+
     response = api_client.post(
         "/api/v1/trips/plan",
         {
