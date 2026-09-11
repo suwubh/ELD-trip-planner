@@ -15,16 +15,39 @@ type FormValues = Record<LocationFieldName, string> & { currentCycleUsedHours: s
 type FormPositions = Partial<Record<LocationFieldName, Position>>
 type FormErrors = Partial<Record<keyof FormValues, string>>
 
-const locationFields: Array<{ name: LocationFieldName; label: string; hint: string }> = [
-  { name: 'currentLocation', label: 'Current location', hint: 'Where the driver is beginning this plan.' },
-  { name: 'pickupLocation', label: 'Pickup location', hint: 'First required service stop (1 hour loading).' },
-  { name: 'dropoffLocation', label: 'Dropoff location', hint: 'Final delivery destination (1 hour unloading).' },
+const locationFields: Array<{
+  name: LocationFieldName
+  label: string
+  hint: string
+  stepLabel: string
+  serviceBadge?: string
+}> = [
+  {
+    name: 'currentLocation',
+    label: 'Current location',
+    hint: 'Where the driver begins the trip.',
+    stepLabel: 'ORIGIN',
+  },
+  {
+    name: 'pickupLocation',
+    label: 'Pickup location',
+    hint: 'First service stop (1 hour loading).',
+    stepLabel: 'PICKUP',
+    serviceBadge: '+1h Load',
+  },
+  {
+    name: 'dropoffLocation',
+    label: 'Dropoff location',
+    hint: 'Final destination (1 hour unloading).',
+    stepLabel: 'DROPOFF',
+    serviceBadge: '+1h Unload',
+  },
 ]
 
 const demoPresets = [
   {
     id: 'preset-1',
-    name: 'Regional Run (1 Day)',
+    name: 'Chicago → Columbus',
     badge: '359 mi',
     currentLocation: 'Chicago, IL',
     pickupLocation: 'Indianapolis, IN',
@@ -33,7 +56,7 @@ const demoPresets = [
   },
   {
     id: 'preset-2',
-    name: 'Multi-Day (10h Reset)',
+    name: 'Atlanta → Dallas',
     badge: '820 mi',
     currentLocation: 'Atlanta, GA',
     pickupLocation: 'Nashville, TN',
@@ -42,7 +65,7 @@ const demoPresets = [
   },
   {
     id: 'preset-3',
-    name: 'Cross-Country (Fuel & Restart)',
+    name: 'Los Angeles → New York',
     badge: '2,780 mi',
     currentLocation: 'Los Angeles, CA',
     pickupLocation: 'Denver, CO',
@@ -81,6 +104,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [plan, setPlan] = useState<TripPlanResponse | null>(null)
+  const [activePresetId, setActivePresetId] = useState<string | null>(null)
 
   function updateValue(name: keyof FormValues, value: string, position?: Position) {
     setValues((current) => ({ ...current, [name]: value }))
@@ -93,6 +117,7 @@ function App() {
   }
 
   function applyPreset(preset: typeof demoPresets[0]) {
+    setActivePresetId(preset.id)
     setValues({
       currentLocation: preset.currentLocation,
       pickupLocation: preset.pickupLocation,
@@ -143,6 +168,11 @@ function App() {
     }
   }
 
+  const cycleNum = Number(values.currentCycleUsedHours)
+  const isCycleValid = !Number.isNaN(cycleNum) && values.currentCycleUsedHours.trim() !== ''
+  const remainingBeforeTrip = isCycleValid ? Math.max(0, 70 - cycleNum) : 70
+  const cyclePercentUsed = isCycleValid ? Math.min(100, Math.max(0, (cycleNum / 70) * 100)) : 0
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -150,34 +180,36 @@ function App() {
           <span className="brand-mark" aria-hidden="true">
             LL
           </span>
-          <span>Linehaul Ledger</span>
+          <span className="brand-text">
+            <strong>Linehaul Ledger</strong>
+          </span>
         </a>
-        <span className="topbar-status">
-          <i aria-hidden="true" /> Commercial Truck HOS &amp; ELD Planner
-        </span>
+        <div className="topbar-status-group">
+          <span className="topbar-status">
+            <i aria-hidden="true" /> HOS Active
+          </span>
+        </div>
       </header>
 
       <section className="intro" aria-labelledby="page-title">
-        <p className="eyebrow">Property-Carrying CMV · 70 hr / 8 day cycle · FMCSA 49 CFR § 395</p>
-        <h1 id="page-title">Plan the road. Respect the clock.</h1>
+        <p className="eyebrow">FMCSA 70-Hour / 8-Day Rule</p>
+        <h1 id="page-title">Commercial Trip Planner</h1>
         <p>
-          Automated commercial truck routing, real-time Hours of Service scheduling, mandatory rest breaks,
-          and authentic 24-hour printable Driver&apos;s Daily Log sheets.
+          Calculate truck routes, Hours of Service duty limits, and 24-hour driver log sheets.
         </p>
       </section>
 
-      {/* Quick Demo Scenarios Banner for Evaluator */}
-      <section className="demo-presets-banner" aria-label="Quick demo scenarios">
+      {/* Presets */}
+      <section className="demo-presets-banner" aria-label="Route presets">
         <div className="presets-label">
-          <span className="presets-tag">Quick Demo Presets</span>
-          <span>One-click test routes for evaluation:</span>
+          <span className="presets-tag">Presets</span>
         </div>
         <div className="presets-list">
           {demoPresets.map((preset) => (
             <button
               key={preset.id}
               type="button"
-              className="preset-btn"
+              className={`preset-btn ${activePresetId === preset.id ? 'is-selected' : ''}`}
               onClick={() => applyPreset(preset)}
             >
               <strong>{preset.name}</strong>
@@ -191,8 +223,8 @@ function App() {
         <form className="planner-card" onSubmit={handleSubmit} noValidate>
           <div className="card-heading">
             <div>
-              <p className="section-kicker">New Trip</p>
-              <h2>Trip details</h2>
+              <p className="section-kicker">Input</p>
+              <h2>Trip Details</h2>
             </div>
             <span className="required-note">
               <b>*</b> Required
@@ -207,35 +239,97 @@ function App() {
                 name={field.name}
                 label={field.label}
                 hint={field.hint}
+                stepLabel={field.stepLabel}
+                serviceBadge={field.serviceBadge}
                 value={values[field.name]}
                 error={errors[field.name]}
                 onChange={(value, position) => updateValue(field.name, value, position)}
               />
             ))}
 
-            <div className="field-group">
-              <label htmlFor="cycle-hours">
-                Current cycle used <span aria-hidden="true">*</span>
-              </label>
-              <div className="cycle-input">
-                <input
-                  id="cycle-hours"
-                  name="currentCycleUsedHours"
-                  inputMode="decimal"
-                  type="number"
-                  min="0"
-                  max="70"
-                  step="0.25"
-                  placeholder="0"
-                  value={values.currentCycleUsedHours}
-                  onChange={(event) => updateValue('currentCycleUsedHours', event.target.value)}
-                  aria-describedby="cycle-help"
-                  aria-invalid={Boolean(errors.currentCycleUsedHours)}
-                />
-                <span>hours of 70</span>
+            <div className="field-group cycle-field-group">
+              <div className="cycle-header">
+                <label htmlFor="cycle-hours">
+                  <span className="field-sequence">4</span>
+                  Current cycle used <span aria-hidden="true">*</span>
+                </label>
+                {isCycleValid && (
+                  <span className="cycle-reserve-tag">
+                    {remainingBeforeTrip.toFixed(1)}h available
+                  </span>
+                )}
               </div>
+
+              <div className="cycle-input-wrapper">
+                <div className="cycle-input">
+                  <input
+                    id="cycle-hours"
+                    name="currentCycleUsedHours"
+                    inputMode="decimal"
+                    type="number"
+                    min="0"
+                    max="70"
+                    step="0.25"
+                    placeholder="0"
+                    value={values.currentCycleUsedHours}
+                    onChange={(event) => updateValue('currentCycleUsedHours', event.target.value)}
+                    aria-describedby="cycle-help"
+                    aria-invalid={Boolean(errors.currentCycleUsedHours)}
+                  />
+                  <span>hours of 70</span>
+                </div>
+
+                <div className="cycle-quick-pills">
+                  <button
+                    type="button"
+                    className="cycle-pill"
+                    onClick={() => updateValue('currentCycleUsedHours', '0')}
+                  >
+                    0h
+                  </button>
+                  <button
+                    type="button"
+                    className="cycle-pill"
+                    onClick={() => updateValue('currentCycleUsedHours', '20')}
+                  >
+                    20h
+                  </button>
+                  <button
+                    type="button"
+                    className="cycle-pill"
+                    onClick={() => updateValue('currentCycleUsedHours', '35')}
+                  >
+                    35h
+                  </button>
+                  <button
+                    type="button"
+                    className="cycle-pill"
+                    onClick={() => updateValue('currentCycleUsedHours', '55')}
+                  >
+                    55h
+                  </button>
+                </div>
+              </div>
+
+              {/* Capacity Visualizer */}
+              <div className="cycle-track-container" aria-hidden="true">
+                <div className="cycle-track-bar">
+                  <div
+                    className={`cycle-track-fill ${
+                      cyclePercentUsed > 80 ? 'is-critical' : cyclePercentUsed > 50 ? 'is-warning' : 'is-normal'
+                    }`}
+                    style={{ width: `${cyclePercentUsed}%` }}
+                  />
+                </div>
+                <div className="cycle-track-labels">
+                  <span>0h</span>
+                  <span>35h</span>
+                  <span>70h</span>
+                </div>
+              </div>
+
               <p className="field-help" id="cycle-help">
-                Driver&apos;s on-duty hours accumulated in the current 8-day cycle (0 to 70).
+                Prior on-duty hours in current 8-day cycle (0 to 70).
               </p>
               {errors.currentCycleUsedHours && (
                 <p className="field-error" role="alert">
@@ -252,12 +346,15 @@ function App() {
           )}
 
           <button className="plan-button" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Calculating truck route & HOS…' : 'Build compliant plan'}
-            <span aria-hidden="true">→</span>
+            {isSubmitting ? (
+              <>Calculating route &amp; HOS…</>
+            ) : (
+              <>
+                Build compliant plan
+                <span aria-hidden="true">→</span>
+              </>
+            )}
           </button>
-          <p className="form-footnote">
-            Uses TomTom Commercial Truck Routing &amp; 70hr/8day HOS engine. All calculations are stateless.
-          </p>
         </form>
 
         <aside className="preview-card" aria-live="polite">
@@ -275,6 +372,8 @@ function LocationField({
   name,
   label,
   hint,
+  stepLabel,
+  serviceBadge,
   value,
   error,
   onChange,
@@ -283,6 +382,8 @@ function LocationField({
   name: LocationFieldName
   label: string
   hint: string
+  stepLabel?: string
+  serviceBadge?: string
   value: string
   error?: string
   onChange: (value: string, position?: Position) => void
@@ -298,74 +399,81 @@ function LocationField({
     const query = value.trim()
     if (!isSuggestionsOpen || query.length < 2) return
     const controller = new AbortController()
-    const timer = window.setTimeout(async () => {
+
+    const timer = setTimeout(async () => {
       setIsLoading(true)
       setRequestError(null)
       try {
-        setSuggestions(await getLocationSuggestions(query, controller.signal))
-      } catch (request) {
-        if (!(request instanceof DOMException && request.name === 'AbortError')) {
+        const results = await getLocationSuggestions(query, controller.signal)
+        setSuggestions(results)
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setRequestError(err instanceof ApiError ? err.message : 'Suggestions unavailable.')
           setSuggestions([])
-          setRequestError('Suggestions are unavailable. You can still enter a complete location.')
         }
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
       }
-    }, 300)
+    }, 250)
+
     return () => {
+      clearTimeout(timer)
       controller.abort()
-      window.clearTimeout(timer)
     }
   }, [value, isSuggestionsOpen])
 
-  function closeSuggestions() {
+  function selectSuggestion(suggestion: LocationSuggestion) {
+    onChange(suggestion.label, suggestion.position)
     setIsSuggestionsOpen(false)
     setSuggestions([])
-    setIsLoading(false)
-    setRequestError(null)
-  }
-
-  function selectSuggestion(suggestion: LocationSuggestion) {
-    closeSuggestions()
-    onChange(suggestion.label, suggestion.position)
   }
 
   return (
-    <div
-      className="field-group location-field"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) closeSuggestions()
-      }}
-    >
-      <label htmlFor={inputId}>
-        <span className="field-sequence">{sequence}</span>
-        {label} <span aria-hidden="true">*</span>
-      </label>
-      <input
-        id={inputId}
-        name={name}
-        type="text"
-        autoComplete="off"
-        placeholder="City, state or terminal address"
-        value={value}
-        onChange={(event) => {
-          const nextValue = event.target.value
-          setIsSuggestionsOpen(true)
-          setSuggestions([])
-          setRequestError(null)
-          if (nextValue.trim().length < 2) setIsLoading(false)
-          onChange(nextValue)
-        }}
-        onFocus={() => {
-          if (value.trim().length >= 2) setIsSuggestionsOpen(true)
-        }}
-        aria-autocomplete="list"
-        aria-controls={suggestionsId}
-        aria-expanded={isSuggestionsOpen && suggestions.length > 0}
-        aria-describedby={`${inputId}-help`}
-        aria-invalid={Boolean(error)}
-      />
-      <p className="field-help" id={`${inputId}-help`}>
+    <div className="field-group">
+      <div className="field-label-row">
+        <label htmlFor={inputId}>
+          <span className="field-sequence">{sequence}</span>
+          {label} <span aria-hidden="true">*</span>
+        </label>
+        {stepLabel && <span className="field-step-tag">{stepLabel}</span>}
+        {serviceBadge && <span className="service-badge">{serviceBadge}</span>}
+      </div>
+
+      <div className="input-wrapper">
+        <input
+          id={inputId}
+          name={name}
+          type="text"
+          value={value}
+          onChange={(event) => {
+            onChange(event.target.value)
+            setIsSuggestionsOpen(true)
+          }}
+          onFocus={() => {
+            if (value.trim().length >= 2) setIsSuggestionsOpen(true)
+          }}
+          onBlur={() => {
+            setTimeout(() => setIsSuggestionsOpen(false), 200)
+          }}
+          placeholder={`Enter city, state`}
+          aria-describedby={`${inputId}-hint`}
+          aria-invalid={Boolean(error)}
+          autoComplete="off"
+        />
+        {value.trim() && (
+          <button
+            type="button"
+            className="clear-input-btn"
+            onClick={() => onChange('')}
+            aria-label={`Clear ${label}`}
+            tabIndex={-1}
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      <p className="field-help" id={`${inputId}-hint`}>
         {hint}
       </p>
       {error && (
@@ -374,19 +482,22 @@ function LocationField({
         </p>
       )}
       {isSuggestionsOpen && isLoading && (
-        <p className="suggestion-state">Finding locations…</p>
+        <p className="suggestion-state">Searching locations…</p>
       )}
       {isSuggestionsOpen && requestError && <p className="field-error">{requestError}</p>}
       {isSuggestionsOpen && !isLoading && !requestError && value.trim().length >= 2 && suggestions.length === 0 && (
-        <p className="suggestion-state">No suggestions found.</p>
+        <p className="suggestion-state">No locations found.</p>
       )}
       {isSuggestionsOpen && suggestions.length > 0 && (
         <ul className="suggestions" id={suggestionsId} aria-label={`${label} suggestions`}>
           {suggestions.map((suggestion) => (
             <li key={suggestion.id}>
               <button type="button" onClick={() => selectSuggestion(suggestion)}>
-                <span>{suggestion.label}</span>
-                {suggestion.address && <small>{suggestion.address}</small>}
+                <span className="suggestion-icon">📍</span>
+                <div className="suggestion-content">
+                  <span className="suggestion-title">{suggestion.label}</span>
+                  {suggestion.address && <small className="suggestion-address">{suggestion.address}</small>}
+                </div>
               </button>
             </li>
           ))}
@@ -406,24 +517,27 @@ function EmptyPreview() {
         <span className="route-line short" />
         <span className="route-dot end" />
       </div>
-      <p className="section-kicker">Plan Preview</p>
-      <h2>Your compliant route appears here.</h2>
+      <p className="section-kicker">Summary</p>
+      <h2>Trip Plan</h2>
       <p>
-        We&apos;ll surface drive time, mandated 30-min breaks, fuel stops every 1,000 miles, overnight 10-hr resets,
-        and authentic 24-hour printable log sheets.
+        Enter trip details to view route instructions, compliance status, and daily log sheets.
       </p>
       <dl className="preview-list">
         <div>
-          <dt>Route</dt>
-          <dd>Commercial truck routing through TomTom</dd>
+          <dt>Routing</dt>
+          <dd>TomTom truck routing</dd>
         </div>
         <div>
-          <dt>HOS Engine</dt>
-          <dd>Minute-accurate 70hr/8day compliance</dd>
+          <dt>HOS Rules</dt>
+          <dd>11h drive · 14h window · 70h cycle</dd>
         </div>
         <div>
-          <dt>Logs</dt>
-          <dd>FMCSA 24-hour Daily Logs, ready to print</dd>
+          <dt>Stops</dt>
+          <dd>1h pickup &amp; delivery + fuel</dd>
+        </div>
+        <div>
+          <dt>Daily Logs</dt>
+          <dd>24-hour RODS sheets</dd>
         </div>
       </dl>
     </div>

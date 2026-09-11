@@ -71,7 +71,7 @@ export function PlanResults({ plan }: PlanResultsProps) {
     <section className="results" aria-labelledby="results-title">
       <div className="results-heading">
         <div>
-          <p className="section-kicker">Dispatch View</p>
+          <p className="section-kicker">Results</p>
           <h2 id="results-title">Route, compliance, and stops</h2>
           <p>
             {trip.locations.current.label} to {trip.locations.dropoff.label} via{' '}
@@ -83,13 +83,13 @@ export function PlanResults({ plan }: PlanResultsProps) {
             compliance.isCompliant ? 'is-compliant' : 'needs-review'
           }`}
         >
-          {compliance.isCompliant ? 'Within modeled limits' : 'Review required'}
+          {compliance.isCompliant ? 'Compliant' : 'Review required'}
         </span>
       </div>
 
       <div className="route-summary" aria-label="Route summary">
         <div>
-          <span>Truck route</span>
+          <span>Route</span>
           <strong>{route.distanceMiles.toLocaleString()} mi</strong>
         </div>
         <div>
@@ -110,16 +110,16 @@ export function PlanResults({ plan }: PlanResultsProps) {
         <div className="map-card">
           <div className="panel-heading">
             <div>
-              <p className="section-kicker">Route Map</p>
+              <p className="section-kicker">Map</p>
               <h3>Truck-optimized route</h3>
             </div>
-            <span className="provider-tag">OpenStreetMap + TomTom Routing</span>
+            <span className="provider-tag">OpenStreetMap</span>
           </div>
           <RouteMap route={route} events={plan.events} />
         </div>
 
         <aside className="compliance-card" aria-label="Hours of Service compliance">
-          <p className="section-kicker">HOS Capacity</p>
+          <p className="section-kicker">HOS Status</p>
           <h3>{compliance.isCompliant ? 'Ready to run' : 'Attention required'}</h3>
           <p>{compliance.summary}</p>
           <div className="capacity-list">
@@ -151,7 +151,7 @@ export function PlanResults({ plan }: PlanResultsProps) {
             {nextStop?.reason ? (
               <p>{nextStop.reason}</p>
             ) : (
-              <p>Driver is compliant with FMCSA 70hr/8day property-carrying rules.</p>
+              <p>Driver is compliant with FMCSA 70hr/8day rules.</p>
             )}
           </div>
         </aside>
@@ -160,25 +160,34 @@ export function PlanResults({ plan }: PlanResultsProps) {
       <section className="itinerary-card" aria-labelledby="itinerary-title">
         <div className="panel-heading">
           <div>
-            <p className="section-kicker">Route Instructions &amp; Timeline</p>
+            <p className="section-kicker">Itinerary</p>
             <h3 id="itinerary-title">Route instructions and stops itinerary</h3>
           </div>
-          <span>{itinerary.length} scheduled events</span>
+          <span className="provider-tag">{itinerary.length} scheduled events</span>
         </div>
 
         {route.legs && route.legs.length >= 2 && (
-          <div className="route-legs-guide" style={{ margin: '0 0 16px', padding: '12px 16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ fontWeight: 600, color: '#334155' }}>
-              📍 <strong>Leg 1:</strong> {trip.locations.current.label} → {trip.locations.pickup.label} ({route.legs[0].distanceMiles} mi · {formatDuration(route.legs[0].durationMinutes)})
+          <div className="route-legs-guide" aria-label="Route legs guide">
+            <div className="route-leg-block">
+              <div className="route-leg-header">
+                <span className="route-leg-tag">Leg 1</span>
+                <span>{trip.locations.current.label} → {trip.locations.pickup.label}</span>
+                <span className="route-leg-metrics">{route.legs[0].distanceMiles} mi · {formatDuration(route.legs[0].durationMinutes)}</span>
+              </div>
+              <div className="route-leg-service">
+                ↳ <strong>Stop 1:</strong> Pickup Service (1 hour loading at {trip.locations.pickup.label})
+              </div>
             </div>
-            <div style={{ color: '#64748b', paddingLeft: '20px' }}>
-              ↳ Stop 1: Pickup Service (1 hour on-duty loading at {trip.locations.pickup.label})
-            </div>
-            <div style={{ fontWeight: 600, color: '#334155' }}>
-              🏁 <strong>Leg 2:</strong> {trip.locations.pickup.label} → {trip.locations.dropoff.label} ({route.legs[1].distanceMiles} mi · {formatDuration(route.legs[1].durationMinutes)})
-            </div>
-            <div style={{ color: '#64748b', paddingLeft: '20px' }}>
-              ↳ Stop 2: Delivery Service (1 hour on-duty unloading at {trip.locations.dropoff.label})
+
+            <div className="route-leg-block">
+              <div className="route-leg-header">
+                <span className="route-leg-tag">Leg 2</span>
+                <span>{trip.locations.pickup.label} → {trip.locations.dropoff.label}</span>
+                <span className="route-leg-metrics">{route.legs[1].distanceMiles} mi · {formatDuration(route.legs[1].durationMinutes)}</span>
+              </div>
+              <div className="route-leg-service">
+                ↳ <strong>Stop 2:</strong> Delivery Service (1 hour unloading at {trip.locations.dropoff.label})
+              </div>
             </div>
           </div>
         )}
